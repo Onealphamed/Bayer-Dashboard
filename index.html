@@ -42,10 +42,15 @@ body{font-family:'Inter',sans-serif;background:#F5F7FA;color:#1A2B4A;min-height:
 .filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .filter-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
 .filter-group{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-.filter-chip{font-size:12px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;transition:all .15s;font-weight:500;user-select:none}
+.filter-chip{font-size:12px;padding:4px 13px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;transition:all .15s;font-weight:500;user-select:none}
 .filter-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-pale)}
 .filter-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .filter-chip.opthal.active{background:var(--green);border-color:var(--green)}
+.filter-chip.all-chip{font-weight:700}
+.filter-chip.all-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.filter-clear{font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px;border:none;background:none;font-weight:500;text-decoration:underline;display:none}
+.filter-clear.show{display:inline-block}
+.filter-clear:hover{color:var(--blue)}
 .filter-divider{width:1px;height:20px;background:var(--border);flex-shrink:0}
 .gs-input{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;outline:none;color:var(--text);width:300px;transition:border .2s}
 .gs-input:focus{border-color:var(--blue)}
@@ -221,6 +226,7 @@ tr:hover td{background:#FAFBFE}
 <div class="filter-bar">
   <span class="filter-label">Month</span>
   <div class="filter-group" id="monthFilters"></div>
+  <button class="filter-clear" id="monthClear" onclick="clearMonths()">✕ Clear</button>
   <div class="filter-divider"></div>
   <span class="filter-label">Therapy</span>
   <div class="filter-group" id="therapyFilters"></div>
@@ -404,12 +410,10 @@ function onChartClick(evt, elements, chart, monthLabels) {
   const month  = MONTH_ORDER.find(m => m.slice(0,3) === monthLabels[idx]) || monthLabels[idx];
   const btn    = document.querySelector(`[data-month="${month}"]`);
   if (!btn) return;
-  if (activeMonths.has(month)) {
-    activeMonths.delete(month); btn.classList.remove('active');
-  } else {
-    activeMonths.add(month); btn.classList.add('active');
-  }
-  showToast(`Filter: ${month || 'cleared'}`);
+  if (activeMonths.has(month)) activeMonths.delete(month);
+  else activeMonths.add(month);
+  syncMonthUI();
+  showToast(`Filter: ${month}`);
   refresh();
 }
 
@@ -455,16 +459,37 @@ function getMonthlyData() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FILTERS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function syncMonthUI() {
+  const allBtn = document.querySelector('.all-chip');
+  const clearBtn = document.getElementById('monthClear');
+  const isAll = activeMonths.size === 0;
+  if (allBtn) { allBtn.classList.toggle('active', isAll); }
+  if (clearBtn) { clearBtn.classList.toggle('show', !isAll); }
+  document.querySelectorAll('[data-month]').forEach(b => {
+    b.classList.toggle('active', activeMonths.has(b.dataset.month));
+  });
+}
+
 function initFilters() {
   const months = MONTH_ORDER.filter(m => RAW_DATA.some(d=>d.month===m));
   const mDiv = document.getElementById('monthFilters');
   mDiv.innerHTML = '';
+
+  // All chip
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-chip all-chip active';
+  allBtn.textContent = 'All';
+  allBtn.onclick = () => clearMonths();
+  mDiv.appendChild(allBtn);
+
   months.forEach(m => {
     const b = document.createElement('button');
-    b.className = 'filter-chip'; b.textContent = m.slice(0,3); b.title = m;
-    b.onclick = () => toggleMonth(m,b); b.dataset.month = m;
+    b.className = 'filter-chip';
+    b.textContent = m.slice(0,3); b.title = m; b.dataset.month = m;
+    b.onclick = () => toggleMonth(m);
     mDiv.appendChild(b);
   });
+
   const tDiv = document.getElementById('therapyFilters');
   tDiv.innerHTML = '';
   [['Onco','Oncology','onco'],['Opthal','Ophthal','opthal']].forEach(([val,label,cls])=>{
@@ -473,11 +498,19 @@ function initFilters() {
     b.onclick = () => toggleTherapy(val,b); b.dataset.therapy = val;
     tDiv.appendChild(b);
   });
+  syncMonthUI();
 }
 
-function toggleMonth(m,btn) {
-  if(activeMonths.has(m)){activeMonths.delete(m);btn.classList.remove('active');}
-  else{activeMonths.add(m);btn.classList.add('active');}
+function toggleMonth(m) {
+  if(activeMonths.has(m)) activeMonths.delete(m);
+  else activeMonths.add(m);
+  syncMonthUI();
+  refresh();
+}
+
+function clearMonths() {
+  activeMonths.clear();
+  syncMonthUI();
   refresh();
 }
 function toggleTherapy(t,btn) {
