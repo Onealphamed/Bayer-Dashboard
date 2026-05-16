@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: bayer-dashboard
+    env: static
+    branch: claude/add-dashboard-GQ7fw
+    staticPublishPath: .
+    buildCommand: ""
+    pullRequestPreviewsEnabled: false

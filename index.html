@@ -163,6 +163,16 @@ tr:hover td{background:#FAFBFE}
 .toast{position:fixed;bottom:24px;right:24px;background:#1A2B4A;color:#fff;font-size:12px;padding:10px 18px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:999;opacity:0;transform:translateY(12px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 
+/* ── SYNC BANNER ──────────────────────────────────────────────── */
+.sync-banner{display:none;align-items:center;justify-content:center;gap:8px;background:#EFF6FF;border-bottom:1px solid #BFDBFE;padding:7px 16px;font-size:12px;color:#1D4ED8;font-weight:500}
+.sync-banner.show{display:flex}
+.sync-banner.error{background:#FEF2F2;border-color:#FECACA;color:#DC2626}
+.sync-banner.success{background:#F0FDF4;border-color:#BBF7D0;color:#16A34A}
+.sync-spinner{width:14px;height:14px;border:2px solid #BFDBFE;border-top-color:#1D4ED8;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.sync-banner.error .sync-spinner{display:none}
+.sync-banner.success .sync-spinner{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media(max-width:1100px){.chart-row-3{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){
@@ -195,6 +205,12 @@ tr:hover td{background:#FAFBFE}
     <div class="header-badge" id="lastUpdated">194 Webinars</div>
   </div>
 </header>
+
+<!-- SYNC BANNER -->
+<div class="sync-banner" id="syncBanner">
+  <div class="sync-spinner" id="syncSpinner"></div>
+  <span id="syncMsg">Connecting to Google Sheets…</span>
+</div>
 
 <!-- TABS -->
 <nav class="tab-bar">
@@ -981,24 +997,34 @@ function applySheetData(rows) {
   return parsed.length;
 }
 
-async function syncFromSheets(isManual = false) {
+function setBanner(state, msg) {
+  const banner = document.getElementById('syncBanner');
+  const msgEl  = document.getElementById('syncMsg');
+  banner.className = 'sync-banner';
+  if (state === 'hide') { banner.classList.remove('show'); return; }
+  banner.classList.add('show');
+  if (state === 'error')   banner.classList.add('error');
+  if (state === 'success') banner.classList.add('success');
+  msgEl.textContent = msg;
+  if (state === 'success') setTimeout(() => setBanner('hide'), 3000);
+}
+
+async function syncFromSheets() {
   const badge = document.getElementById('lastUpdated');
-  const prev  = badge.textContent;
-  badge.textContent = 'Syncing…';
+  setBanner('loading', 'Connecting to Google Sheets…');
   try {
     const res = await fetch(SHEET_CSV_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const count = applySheetData(parseCSV(await res.text()));
     const ts = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-    badge.textContent = `${count} Webinars · ${ts}`;
+    badge.textContent = `${count} Webinars · Live · ${ts}`;
+    document.getElementById('lastUpdated').style.background = 'rgba(120,190,32,0.2)';
     initFilters();
     refresh();
-    if (isManual) showToast(`✓ Synced ${count} records from Google Sheets`);
+    setBanner('success', `✓ Live data loaded — ${count} webinars from Google Sheets`);
   } catch (e) {
-    badge.textContent = prev;
-    const msg = `Sheet sync failed: ${e.message}`;
-    if (isManual) showToast(`⚠ ${msg}`);
-    else console.warn(msg + ' — showing static data');
+    setBanner('error', `⚠ Could not reach Google Sheets — showing cached data. (${e.message})`);
+    console.warn('Sheet sync failed:', e.message);
   }
 }
 
