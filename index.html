@@ -193,23 +193,24 @@ tr:hover td{background:#FAFBFE}
   .lb-metrics{grid-template-columns:1fr}
 }
 /* ── PASSWORD OVERLAY ─────────────────────────────────────────── */
-#pwOverlay{position:fixed;inset:0;background:linear-gradient(135deg,#001f5c 0%,#003A8F 60%,#0050C8 100%);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s ease}
+#pwOverlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s ease}
 #pwOverlay.fade-out{opacity:0;pointer-events:none}
-.pw-card{background:#fff;border-radius:24px;padding:52px 44px 44px;box-shadow:0 32px 80px rgba(0,0,0,.3);text-align:center;width:400px;max-width:92vw;animation:cardIn .45s cubic-bezier(.4,0,.2,1)}
-@keyframes cardIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-.pw-logo{margin:0 auto 28px;width:90px;height:90px}
-.pw-title{font-size:20px;font-weight:700;color:#1A2B4A;margin-bottom:6px;letter-spacing:-.3px}
-.pw-sub{font-size:13px;color:#64748B;margin-bottom:32px}
-.pw-input-wrap{position:relative;margin-bottom:14px}
-.pw-input{width:100%;padding:13px 44px 13px 16px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;color:#1A2B4A;outline:none;transition:border .2s,box-shadow .2s;box-sizing:border-box}
-.pw-input:focus{border-color:#003A8F;box-shadow:0 0 0 3px rgba(0,58,143,.1)}
-.pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;font-size:16px;padding:0;line-height:1}
+.pw-card{background:#fff;border-radius:4px;padding:56px 48px 44px;box-shadow:0 2px 16px rgba(0,0,0,.10),0 1px 3px rgba(0,0,0,.08);text-align:center;width:420px;max-width:92vw;animation:cardIn .4s ease}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.pw-logo{margin:0 auto 32px;width:100px;height:100px;display:block}
+.pw-divider{width:40px;height:3px;background:#003A8F;margin:0 auto 20px;border-radius:2px}
+.pw-title{font-size:18px;font-weight:700;color:#0D1B2E;margin-bottom:6px;letter-spacing:.1px}
+.pw-sub{font-size:12px;color:#6B7280;margin-bottom:32px;text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.pw-input-wrap{position:relative;margin-bottom:12px}
+.pw-input{width:100%;padding:12px 44px 12px 14px;border:1px solid #D1D5DB;border-radius:2px;font-size:14px;font-family:'Inter',sans-serif;color:#0D1B2E;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;background:#FAFAFA}
+.pw-input:focus{border-color:#003A8F;box-shadow:0 0 0 2px rgba(0,58,143,.12);background:#fff}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:15px;padding:0;line-height:1}
 .pw-toggle:hover{color:#003A8F}
-.pw-btn{width:100%;padding:14px;background:linear-gradient(135deg,#003A8F,#0050C8);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .2s,transform .1s;letter-spacing:.2px}
-.pw-btn:hover{opacity:.92}
-.pw-btn:active{transform:scale(.98)}
-.pw-error{color:#DC2626;font-size:12px;margin-top:12px;font-weight:500;min-height:18px;transition:opacity .2s}
-.pw-footer{margin-top:28px;font-size:11px;color:#94A3B8}
+.pw-btn{width:100%;padding:13px;background:#003A8F;color:#fff;border:none;border-radius:2px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s;letter-spacing:.8px;text-transform:uppercase;margin-top:4px}
+.pw-btn:hover{background:#002D6E}
+.pw-btn:active{background:#001F4D}
+.pw-error{color:#DC2626;font-size:12px;margin-top:10px;font-weight:500;min-height:18px}
+.pw-footer{margin-top:32px;padding-top:20px;border-top:1px solid #F3F4F6;font-size:11px;color:#9CA3AF;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -217,34 +218,43 @@ tr:hover td{background:#FAFBFE}
 <!-- PASSWORD OVERLAY -->
 <div id="pwOverlay">
   <div class="pw-card">
-    <!-- Bayer Cross Logo SVG -->
-    <svg class="pw-logo" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="45" cy="45" r="45" fill="#003A8F"/>
-      <!-- Horizontal bar -->
-      <rect x="0" y="36" width="90" height="18" fill="#fff" opacity=".15"/>
-      <!-- Vertical bar -->
-      <rect x="36" y="0" width="18" height="90" fill="#fff" opacity=".15"/>
-      <!-- BAYER horizontal -->
-      <text x="45" y="50" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" letter-spacing="2">BAYER</text>
-      <!-- BAYER vertical -->
-      <text x="45" y="50" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" letter-spacing="2" transform="rotate(-90 45 45)">BAYER</text>
-      <!-- Center dot -->
-      <circle cx="45" cy="45" r="4" fill="#78BE20"/>
+    <!-- Bayer Cross Logo SVG (accurate recreation) -->
+    <svg class="pw-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bayerGrad" x1="0" y1="1" x2="1" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%" stop-color="#69BE28"/>
+          <stop offset="48%" stop-color="#00AEEF"/>
+          <stop offset="100%" stop-color="#00AEEF"/>
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="99" fill="url(#bayerGrad)"/>
+      <circle cx="100" cy="100" r="82" fill="#fff"/>
+      <!-- Vertical: B -->
+      <text x="100" y="43" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">B</text>
+      <!-- Vertical: A -->
+      <text x="100" y="75" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">A</text>
+      <!-- Horizontal: BAYER (Y sits at center 100,100) -->
+      <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A" letter-spacing="2">BAYER</text>
+      <!-- Vertical: E -->
+      <text x="100" y="125" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">E</text>
+      <!-- Vertical: R -->
+      <text x="100" y="157" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">R</text>
     </svg>
 
+    <div class="pw-divider"></div>
     <div class="pw-title">Bayer Webinar Dashboard</div>
-    <div class="pw-sub">Enter your password to access</div>
+    <div class="pw-sub">Authorized Access Only</div>
 
     <div class="pw-input-wrap">
-      <input class="pw-input" id="pwInput" type="password" placeholder="Password"
+      <input class="pw-input" id="pwInput" type="password" placeholder="Enter password"
         onkeydown="if(event.key==='Enter')checkPassword()"/>
       <button class="pw-toggle" onclick="togglePwVisibility()" title="Show/hide">👁</button>
     </div>
 
-    <button class="pw-btn" onclick="checkPassword()">Access Dashboard</button>
+    <button class="pw-btn" onclick="checkPassword()">Sign In</button>
     <div class="pw-error" id="pwError"></div>
 
-    <div class="pw-footer">🔒 Restricted access · Bayer India</div>
+    <div class="pw-footer">CONFIDENTIAL · BAYER AG · INTERNAL USE ONLY</div>
   </div>
 </div>
 
@@ -276,6 +286,9 @@ tr:hover td{background:#FAFBFE}
 
 <!-- FILTERS -->
 <div class="filter-bar">
+  <span class="filter-label">Year</span>
+  <div class="filter-group" id="yearFilters"></div>
+  <div class="filter-divider"></div>
   <span class="filter-label">Month</span>
   <div class="filter-group" id="monthFilters"></div>
   <button class="filter-clear" id="monthClear" onclick="clearMonths()">✕ Clear</button>
@@ -414,7 +427,14 @@ const COLORS = {
 // STATE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let activeMonths    = new Set();
+let activeYears     = new Set();
 let activeTherapies = new Set(['Onco','Opthal']);
+
+function getYear(d) {
+  if (!d.date) return null;
+  const m = d.date.match(/\b(202\d)\b/);
+  return m ? parseInt(m[1]) : null;
+}
 let tableSortCol    = 'date';
 let tableSortDir    = 1;
 let charts          = {};
@@ -426,6 +446,7 @@ let sparkCharts     = {};
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const filt = data => data.filter(d =>
   (activeMonths.size === 0 || activeMonths.has(d.month)) &&
+  (activeYears.size  === 0 || activeYears.has(getYear(d))) &&
   (activeTherapies.size === 0 || activeTherapies.has(d.therapy))
 );
 const groupBy = (arr,key) => arr.reduce((a,d)=>{ (a[d[key]]=a[d[key]]||[]).push(d); return a; },{});
@@ -515,42 +536,73 @@ function syncMonthUI() {
   const allBtn = document.querySelector('.all-chip');
   const clearBtn = document.getElementById('monthClear');
   const isAll = activeMonths.size === 0;
-  if (allBtn) { allBtn.classList.toggle('active', isAll); }
-  if (clearBtn) { clearBtn.classList.toggle('show', !isAll); }
+  if (allBtn) allBtn.classList.toggle('active', isAll);
+  if (clearBtn) clearBtn.classList.toggle('show', !isAll);
   document.querySelectorAll('[data-month]').forEach(b => {
     b.classList.toggle('active', activeMonths.has(b.dataset.month));
   });
 }
 
-function initFilters() {
-  const months = MONTH_ORDER.filter(m => RAW_DATA.some(d=>d.month===m));
+function syncYearUI() {
+  document.querySelectorAll('[data-year]').forEach(b => {
+    const yr = parseInt(b.dataset.year);
+    b.classList.toggle('active', activeYears.size === 0
+      ? b.dataset.year === 'all'
+      : activeYears.has(yr));
+  });
+  // Rebuild month chips to show only months relevant to selected year(s)
+  const relevantData = activeYears.size === 0 ? RAW_DATA
+    : RAW_DATA.filter(d => activeYears.has(getYear(d)));
+  const months = MONTH_ORDER.filter(m => relevantData.some(d => d.month === m));
   const mDiv = document.getElementById('monthFilters');
   mDiv.innerHTML = '';
-
-  // All chip
   const allBtn = document.createElement('button');
-  allBtn.className = 'filter-chip all-chip active';
-  allBtn.textContent = 'All';
-  allBtn.onclick = () => clearMonths();
+  allBtn.className = 'filter-chip all-chip' + (activeMonths.size === 0 ? ' active' : '');
+  allBtn.textContent = 'All'; allBtn.onclick = () => clearMonths();
   mDiv.appendChild(allBtn);
-
   months.forEach(m => {
     const b = document.createElement('button');
-    b.className = 'filter-chip';
+    b.className = 'filter-chip' + (activeMonths.has(m) ? ' active' : '');
     b.textContent = m.slice(0,3); b.title = m; b.dataset.month = m;
     b.onclick = () => toggleMonth(m);
     mDiv.appendChild(b);
   });
+}
+
+function initFilters() {
+  // Year chips
+  const years = [...new Set(RAW_DATA.map(getYear).filter(Boolean))].sort();
+  const yDiv = document.getElementById('yearFilters');
+  yDiv.innerHTML = '';
+  const allYrBtn = document.createElement('button');
+  allYrBtn.className = 'filter-chip all-chip active';
+  allYrBtn.textContent = 'All'; allYrBtn.dataset.year = 'all';
+  allYrBtn.onclick = () => { activeYears.clear(); activeMonths.clear(); syncYearUI(); syncMonthUI(); refresh(); };
+  yDiv.appendChild(allYrBtn);
+  years.forEach(yr => {
+    const b = document.createElement('button');
+    b.className = 'filter-chip'; b.textContent = yr; b.dataset.year = yr;
+    b.onclick = () => toggleYear(yr);
+    yDiv.appendChild(b);
+  });
+
+  syncYearUI();
 
   const tDiv = document.getElementById('therapyFilters');
   tDiv.innerHTML = '';
-  [['Onco','Oncology','onco'],['Opthal','Ophthal','opthal']].forEach(([val,label,cls])=>{
+  [['Onco','Oncology','onco'],['Opthal','Ophthal','opthal']].forEach(([val,label,cls]) => {
     const b = document.createElement('button');
     b.className = `filter-chip ${cls} active`; b.textContent = label;
     b.onclick = () => toggleTherapy(val,b); b.dataset.therapy = val;
     tDiv.appendChild(b);
   });
-  syncMonthUI();
+}
+
+function toggleYear(yr) {
+  activeMonths.clear();
+  if (activeYears.has(yr)) { activeYears.delete(yr); }
+  else { activeYears.clear(); activeYears.add(yr); }
+  syncYearUI(); syncMonthUI(); refresh();
 }
 
 function toggleMonth(m) {
