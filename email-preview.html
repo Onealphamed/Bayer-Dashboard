@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Georgia',serif;background:#E8E8E8;padding:40px 20px}
+  .wrap{max-width:640px;margin:0 auto;background:#fff;border-top:4px solid #003A8F}
+  /* HEADER */
+  .hdr{padding:32px 40px 28px;border-bottom:1px solid #E5E5E5}
+  .hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+  .hdr-logo-row{display:flex;align-items:center;gap:12px}
+  .hdr-logo{width:36px;height:36px}
+  .hdr-company{font-family:'Arial',sans-serif;font-size:11px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase}
+  .hdr-meta{font-family:'Arial',sans-serif;font-size:10px;color:#999;text-align:right;line-height:1.8}
+  .hdr-title{font-size:22px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif;letter-spacing:-.3px;margin-bottom:6px}
+  .hdr-sub{font-family:'Arial',sans-serif;font-size:11px;color:#666;letter-spacing:.5px;text-transform:uppercase}
+  /* EXECUTIVE SUMMARY */
+  .exec{padding:24px 40px;background:#F9F9F9;border-bottom:1px solid #E5E5E5}
+  .exec-label{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+  .exec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #E0E0E0}
+  .exec-kpi{padding:18px 16px;text-align:center;border-right:1px solid #E0E0E0}
+  .exec-kpi:last-child{border-right:none}
+  .exec-val{font-size:30px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif;line-height:1}
+  .exec-val.blue{color:#003A8F}
+  .exec-val.green{color:#2D6A2D}
+  .exec-lbl{font-family:'Arial',sans-serif;font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-top:8px;font-weight:600}
+  /* BODY */
+  .body{padding:28px 40px}
+  .section{margin-bottom:28px}
+  .section-title{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#003A8F;padding-bottom:8px;border-bottom:2px solid #003A8F;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+  /* THERAPY TABLE */
+  table{width:100%;border-collapse:collapse;font-family:'Arial',sans-serif;font-size:12px}
+  th{background:#0D1B2E;color:#fff;padding:9px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  th.right{text-align:right}
+  td{padding:10px 14px;border-bottom:1px solid #F0F0F0;color:#333;vertical-align:middle}
+  td.right{text-align:right;font-weight:600;color:#0D1B2E}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#FAFAFA}
+  .therapy-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;letter-spacing:.5px;text-transform:uppercase}
+  .badge-onco{background:#EEF2FF;color:#003A8F;border:1px solid #C7D2FE}
+  .badge-opth{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+  /* THIS WEEK */
+  .week-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+  .week-card{border:1px solid #E5E5E5;padding:18px}
+  .week-card-label{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:10px}
+  .week-card-val{font-size:28px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif}
+  .week-card-sub{font-family:'Arial',sans-serif;font-size:11px;color:#888;margin-top:4px}
+  /* STATUS BAR */
+  .status-section{margin-bottom:28px}
+  .status-bar-wrap{background:#F0F0F0;height:8px;border-radius:0;overflow:hidden;margin-bottom:8px}
+  .status-bar{height:8px;background:#003A8F}
+  .status-meta{display:flex;justify-content:space-between;font-family:'Arial',sans-serif;font-size:10px;color:#666}
+  .status-meta strong{color:#0D1B2E}
+  /* CTA */
+  .cta-section{background:#0D1B2E;padding:24px 40px;text-align:center}
+  .cta-title{font-family:'Arial',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:14px}
+  .cta-btn{display:inline-block;background:#003A8F;color:#fff;padding:12px 36px;text-decoration:none;font-family:'Arial',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(255,255,255,.2)}
+  .cta-pass{margin-top:12px;font-family:'Arial',sans-serif;font-size:10px;color:rgba(255,255,255,.4)}
+  .cta-pass strong{color:rgba(255,255,255,.7)}
+  /* FOOTER */
+  .footer{padding:16px 40px;border-top:1px solid #E5E5E5;display:flex;justify-content:space-between;align-items:center}
+  .footer-left{font-family:'Arial',sans-serif;font-size:9px;color:#aaa;letter-spacing:.5px;text-transform:uppercase;line-height:1.8}
+  .footer-right{font-family:'Arial',sans-serif;font-size:9px;color:#aaa;text-align:right;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-logo-row">
+        <svg class="hdr-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stop-color="#69BE28"/>
+              <stop offset="55%" stop-color="#00AEEF"/>
+              <stop offset="100%" stop-color="#00AEEF"/>
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r="99" fill="url(#g)"/>
+          <circle cx="100" cy="100" r="82" fill="white"/>
+          <text x="100" y="43" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">B</text>
+          <text x="100" y="75" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">A</text>
+          <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A" letter-spacing="2">BAYER</text>
+          <text x="100" y="125" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">E</text>
+          <text x="100" y="157" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">R</text>
+        </svg>
+        <div>
+          <div class="hdr-company">Bayer India</div>
+          <div style="font-family:Arial,sans-serif;font-size:10px;color:#999;margin-top:2px">Medical Affairs · CME Analytics</div>
+        </div>
+      </div>
+      <div class="hdr-meta">
+        Weekly Briefing<br/>
+        Monday, 19 May 2025<br/>
+        <span style="color:#003A8F;font-weight:700">CONFIDENTIAL</span>
+      </div>
+    </div>
+    <div class="hdr-title">Webinar Performance Report</div>
+    <div class="hdr-sub">February 2025 – May 2026 · All Therapy Areas</div>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div class="exec">
+    <div class="exec-label">Executive Summary</div>
+    <div class="exec-grid">
+      <div class="exec-kpi">
+        <div class="exec-val blue">194</div>
+        <div class="exec-lbl">Total Webinars</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="exec-val green">8,742</div>
+        <div class="exec-lbl">Total Attendees</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="exec-val">48.3</div>
+        <div class="exec-lbl">Avg Attendees</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- THERAPY BREAKDOWN -->
+    <div class="section">
+      <div class="section-title">
+        Therapy Area Performance
+        <span style="font-size:9px;font-weight:400;color:#999;letter-spacing:0;text-transform:none">vs. programme total</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Therapy Area</th>
+            <th class="right">Webinars</th>
+            <th class="right">Attendees</th>
+            <th class="right">Avg / Session</th>
+            <th class="right">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="therapy-badge badge-onco">Oncology</span></td>
+            <td class="right">118</td>
+            <td class="right">5,412</td>
+            <td class="right">45.9</td>
+            <td class="right">61%</td>
+          </tr>
+          <tr>
+            <td><span class="therapy-badge badge-opth">Ophthal</span></td>
+            <td class="right">76</td>
+            <td class="right">3,330</td>
+            <td class="right">43.8</td>
+            <td class="right">39%</td>
+          </tr>
+          <tr style="background:#F9F9F9">
+            <td style="font-weight:700;color:#0D1B2E;font-size:11px">TOTAL</td>
+            <td class="right" style="font-weight:700;color:#0D1B2E">194</td>
+            <td class="right" style="font-weight:700;color:#0D1B2E">8,742</td>
+            <td class="right" style="font-weight:700;color:#0D1B2E">48.3</td>
+            <td class="right" style="font-weight:700;color:#0D1B2E">100%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- THIS WEEK -->
+    <div class="section">
+      <div class="section-title">This Week</div>
+      <div class="week-row">
+        <div class="week-card">
+          <div class="week-card-label">New Webinars</div>
+          <div class="week-card-val">4</div>
+          <div class="week-card-sub">added in last 7 days</div>
+        </div>
+        <div class="week-card">
+          <div class="week-card-label">Top Month Overall</div>
+          <div class="week-card-val" style="font-size:22px">September</div>
+          <div class="week-card-sub">22 webinars · highest volume</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTING STATUS -->
+    <div class="section">
+      <div class="section-title">Reporting Compliance</div>
+      <div class="status-section">
+        <div class="status-bar-wrap">
+          <div class="status-bar" style="width:82%"></div>
+        </div>
+        <div class="status-meta">
+          <span><strong>159 reported</strong> · 82% compliance rate</span>
+          <span><strong>35 pending</strong> · action required</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="cta-title">Access Live Dashboard</div>
+    <a href="https://bayer-dashboard.onrender.com" class="cta-btn">Open Dashboard →</a>
+    <div class="cta-pass">Password: <strong>BayerUser</strong></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      Automated Weekly Report<br/>
+      Generated every Monday · 08:00 IST
+    </div>
+    <div class="footer-right">
+      Strictly Confidential<br/>
+      Bayer AG · Internal Use Only
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
