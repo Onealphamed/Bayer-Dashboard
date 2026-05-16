@@ -429,16 +429,15 @@ function parseDateLoose(str) {
   return null;
 }
 
-function buildMonthOrder() {
-  const firstSeen = {};
-  RAW_DATA.forEach(d => {
+// Returns months sorted by their earliest date within the given dataset
+function getSortedMonths(data) {
+  const earliest = {};
+  data.forEach(d => {
     if (!d.month) return;
     const dt = parseDateLoose(d.date);
-    if (!firstSeen[d.month] || (dt && dt < firstSeen[d.month])) {
-      firstSeen[d.month] = dt || firstSeen[d.month] || new Date(0);
-    }
+    if (dt && (!earliest[d.month] || dt < earliest[d.month])) earliest[d.month] = dt;
   });
-  MONTH_ORDER = Object.keys(firstSeen).sort((a, b) => firstSeen[a] - firstSeen[b]);
+  return Object.keys(earliest).sort((a, b) => earliest[a] - earliest[b]);
 }
 const COLORS = {
   onco:'#003A8F', opthal:'#78BE20',
@@ -529,7 +528,7 @@ function showToast(msg) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function getMonthlyData() {
   const d = currentData;
-  return MONTH_ORDER.filter(m => RAW_DATA.some(x=>x.month===m)).map((m,i,arr) => {
+  return getSortedMonths(d).map((m,i,arr) => {
     const onco      = d.filter(x=>x.month===m && x.therapy==='Onco');
     const opthal    = d.filter(x=>x.month===m && x.therapy==='Opthal');
     const oncoAtt   = onco.filter(x=>x.attendees);
@@ -573,10 +572,10 @@ function syncYearUI() {
       ? b.dataset.year === 'all'
       : activeYears.has(yr));
   });
-  // Rebuild month chips to show only months relevant to selected year(s)
+  // Rebuild month chips sorted correctly for the selected year(s)
   const relevantData = activeYears.size === 0 ? RAW_DATA
     : RAW_DATA.filter(d => activeYears.has(getYear(d)));
-  const months = MONTH_ORDER.filter(m => relevantData.some(d => d.month === m));
+  const months = getSortedMonths(relevantData);
   const mDiv = document.getElementById('monthFilters');
   mDiv.innerHTML = '';
   const allBtn = document.createElement('button');
@@ -692,7 +691,7 @@ function renderKPIs() {
   const months   = new Set(d.map(x=>x.month));
 
   // Build monthly trend arrays for sparklines (all data, not filtered)
-  const mMonths = MONTH_ORDER.filter(m=>all.some(x=>x.month===m));
+  const mMonths = getSortedMonths(all);
   const spark = {
     oncoVol:    mMonths.map(m=>all.filter(x=>x.month===m&&x.therapy==='Onco').length),
     opthalVol:  mMonths.map(m=>all.filter(x=>x.month===m&&x.therapy==='Opthal').length),
@@ -1084,7 +1083,7 @@ function applySheetData(rows) {
     }));
   RAW_DATA.length = 0;
   parsed.forEach(x => RAW_DATA.push(x));
-  buildMonthOrder();
+  MONTH_ORDER = getSortedMonths(RAW_DATA);
   return parsed.length;
 }
 
@@ -1159,7 +1158,7 @@ if (sessionStorage.getItem('bayer_auth') === '1') {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // BOOT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-buildMonthOrder();              // derive month order from static data
+MONTH_ORDER = getSortedMonths(RAW_DATA); // derive month order from static data
 initFilters();
 refresh();                      // render immediately with static data
 syncFromSheets();               // then pull live data from Google Sheets (rebuilds month order)
