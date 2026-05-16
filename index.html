@@ -209,7 +209,6 @@ tr:hover td{background:#FAFBFE}
   <div class="filter-divider"></div>
   <span class="filter-label">Therapy</span>
   <div class="filter-group" id="therapyFilters"></div>
-  <input id="gsUrl" type="hidden" value="https://docs.google.com/spreadsheets/d/1wdnAAZRPK4aU6xs8ZPa_lyo2e0DiuSp_4v-1eRPOazQ/export?format=csv&gid=0"/>
 </div>
 
 <!-- MAIN -->
@@ -923,47 +922,93 @@ function renderSales() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GOOGLE SHEETS LOADER (preserved)
+// GOOGLE SHEETS LIVE SYNC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function loadFromGoogleSheets() {
-  const url=document.getElementById('gsUrl').value.trim();
-  if(!url) return alert('Paste a Google Sheets CSV export URL.\nExample: https://docs.google.com/spreadsheets/d/ID/export?format=csv');
-  const btn=document.querySelector('.gs-btn');
-  btn.textContent='Loading…'; btn.disabled=true;
-  fetch(url)
-    .then(r=>{if(!r.ok)throw new Error('Fetch failed — make sure sheet is publicly shared.');return r.text();})
-    .then(csv=>{
-      const rows=csv.split('\n').map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
-      const hdr=rows[0].map(h=>h.toLowerCase());
-      const iT=hdr.findIndex(h=>h.includes('therapy'));
-      const iE=hdr.findIndex(h=>h.includes('event')||h.includes('name'));
-      const iD=hdr.findIndex(h=>h.includes('date'));
-      const iM=hdr.findIndex(h=>h.includes('month'));
-      const iY=hdr.findIndex(h=>h.includes('type'));
-      const iA=hdr.findIndex(h=>h.includes('attend'));
-      const iR=hdr.findIndex(h=>h.includes('report'));
-      if(iT<0||iE<0){alert('Could not find Therapy/Event columns. Check sheet format.');btn.textContent='Load';btn.disabled=false;return;}
-      const parsed=rows.slice(1).filter(r=>r[iT]).map((r,i)=>({
-        id:i+1,therapy:r[iT]||'',event:r[iE]||'',month:r[iM]||'',date:r[iD]||'',
-        type:r[iY]||'NSP',attendees:r[iA]?parseInt(r[iA])||null:null,
-        salesperson:null,reported:r[iR]==='Yes'
-      }));
-      RAW_DATA.length=0; parsed.forEach(x=>RAW_DATA.push(x));
-      document.getElementById('lastUpdated').textContent=`${parsed.length} Webinars (Live)`;
-      initFilters(); refresh();
-      showToast(`✓ Loaded ${parsed.length} records from Google Sheets`);
-      btn.textContent='✓ Loaded'; setTimeout(()=>{btn.textContent='Load';btn.disabled=false;},2500);
-    })
-    .catch(e=>{alert('Error: '+e.message);btn.textContent='Load';btn.disabled=false;});
+
+// "Publish to web" CSV URL — works with public CORS, no backend needed.
+// To update: File → Share → Publish to web → Sheet1 → CSV → copy URL here.
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1wdnAAZRPK4aU6xs8ZPa_lyo2e0DiuSp_4v-1eRPOazQ/pub?output=csv&gid=0';
+
+// Proper RFC-4180 CSV parser — handles commas and newlines inside quoted fields.
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], nx = text[i+1];
+    if (inQ) {
+      if (ch === '"' && nx === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQ = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQ = true; }
+      else if (ch === ',') { row.push(field.trim()); field = ''; }
+      else if (ch === '\r' && nx === '\n') { row.push(field.trim()); rows.push(row); row=[]; field=''; i++; }
+      else if (ch === '\n' || ch === '\r') { row.push(field.trim()); rows.push(row); row=[]; field=''; }
+      else { field += ch; }
+    }
+  }
+  if (field || row.length) { row.push(field.trim()); rows.push(row); }
+  return rows.filter(r => r.some(f => f));
+}
+
+function applySheetData(rows) {
+  const hdr = rows[0].map(h => h.toLowerCase().trim());
+  const col = key => hdr.findIndex(h => key.some(k => h.includes(k)));
+  const iT = col(['therapy']);
+  const iE = col(['event', 'name']);
+  const iD = col(['date']);
+  const iM = col(['month']);
+  const iY = col(['type']);
+  const iA = col(['attend']);
+  const iS = col(['sales', 'person', 'rep']);
+  const iR = col(['report']);
+  if (iT < 0 || iE < 0) throw new Error('Therapy or Event column not found — check sheet headers.');
+  const parsed = rows.slice(1)
+    .filter(r => r[iT] && r[iT].trim())
+    .map((r, i) => ({
+      id: i + 1,
+      therapy:    r[iT].trim(),
+      event:      (r[iE] || '').trim(),
+      month:      iM >= 0 ? (r[iM] || '').trim() : '',
+      date:       iD >= 0 ? (r[iD] || '').trim() : '',
+      type:       iY >= 0 ? (r[iY] || 'NSP').trim() : 'NSP',
+      attendees:  iA >= 0 && r[iA] ? parseInt(r[iA]) || null : null,
+      salesperson:iS >= 0 && r[iS] ? r[iS].trim() || null : null,
+      reported:   iR >= 0 ? (r[iR] || '').toLowerCase() === 'yes' : true,
+    }));
+  RAW_DATA.length = 0;
+  parsed.forEach(x => RAW_DATA.push(x));
+  return parsed.length;
+}
+
+async function syncFromSheets(isManual = false) {
+  const badge = document.getElementById('lastUpdated');
+  const prev  = badge.textContent;
+  badge.textContent = 'Syncing…';
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const count = applySheetData(parseCSV(await res.text()));
+    const ts = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    badge.textContent = `${count} Webinars · ${ts}`;
+    initFilters();
+    refresh();
+    if (isManual) showToast(`✓ Synced ${count} records from Google Sheets`);
+  } catch (e) {
+    badge.textContent = prev;
+    const msg = `Sheet sync failed: ${e.message}`;
+    if (isManual) showToast(`⚠ ${msg}`);
+    else console.warn(msg + ' — showing static data');
+  }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // BOOT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 initFilters();
-refresh();
-// Auto-load from Google Sheets on startup
-loadFromGoogleSheets();
+refresh();                      // render immediately with static data
+syncFromSheets();               // then pull live data from Google Sheets
+setInterval(syncFromSheets, 5 * 60 * 1000); // re-sync every 5 minutes
 </script>
 </body>
 </html>
