@@ -657,7 +657,17 @@ function renderCharts() {
     type:'line',
     data:{ labels, datasets:[
       areaDataset('Oncology', md.map(x=>x.oncoCount),  COLORS.onco,   COLORS.oncoAlpha),
-      areaDataset('Ophthal',  md.map(x=>x.opthalCount), COLORS.opthal, COLORS.opthalAlpha)
+      areaDataset('Ophthal',  md.map(x=>x.opthalCount), COLORS.opthal, COLORS.opthalAlpha),
+      {
+        label:'Total',
+        data: md.map(x=>x.oncoCount + x.opthalCount),
+        borderColor:'#F59E0B',
+        backgroundColor:'rgba(245,158,11,0.06)',
+        borderWidth:2, borderDash:[5,3],
+        pointRadius:3, pointHoverRadius:6,
+        pointBackgroundColor:'#F59E0B',
+        tension:.42, fill:false
+      }
     ]},
     options:{
       responsive:true, animation:{duration:500},
