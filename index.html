@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- Dark mode applied before paint to eliminate flash -->
+<script>if(localStorage.getItem('bayer_dark')==='1')document.documentElement.classList.add('dark');</script>
 <style>
 /* ── RESET & BASE ─────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -192,6 +194,82 @@ tr:hover td{background:#FAFBFE}
   .kpi-grid{grid-template-columns:1fr 1fr}
   .lb-metrics{grid-template-columns:1fr}
 }
+/* ── DARK MODE TOGGLE BUTTON ──────────────────────────────────── */
+.dark-toggle{background:none;border:none;cursor:pointer;font-size:18px;color:rgba(255,255,255,.7);padding:4px 6px;border-radius:6px;line-height:1;transition:transform .2s,opacity .2s}
+.dark-toggle:hover{transform:scale(1.2);opacity:1;color:#fff}
+
+/* ── DARK MODE VARIABLES ──────────────────────────────────────── */
+html.dark{
+  --blue:#4D9EFF;--blue-light:#6AADFF;--blue-pale:#1A2B3F;
+  --green:#78BE20;--green-light:#152B15;
+  --bg:#0D1623;--card:#162032;--border:#243046;
+  --text:#D4DCE8;--muted:#8899B0;
+  --shadow:0 1px 3px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+  --shadow-hover:0 6px 20px rgba(0,0,0,.6);
+}
+html.dark body{background:var(--bg);color:var(--text)}
+html.dark .tab-bar{background:var(--card);border-color:var(--border)}
+html.dark .tab-btn{color:var(--muted)}
+html.dark .tab-btn:hover{color:var(--text)}
+html.dark .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+html.dark .filter-bar{background:var(--card);border-color:var(--border)}
+html.dark .filter-chip{background:#1A2535;border-color:var(--border);color:var(--muted)}
+html.dark .filter-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-pale)}
+html.dark .filter-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+html.dark .filter-chip.opthal.active{background:var(--green);border-color:var(--green);color:#fff}
+html.dark .filter-clear{color:var(--muted)}
+html.dark .filter-clear:hover{color:var(--blue)}
+html.dark .filter-divider{background:var(--border)}
+html.dark th{background:#1E2D42;color:var(--muted)}
+html.dark td{border-color:var(--border);color:var(--text)}
+html.dark tr:hover td{background:#1E2D42}
+html.dark .table-card{border-color:var(--border)}
+html.dark .table-header{border-color:var(--border);background:var(--card)}
+html.dark .table-search{background:#1A2535;border-color:var(--border);color:var(--text)}
+html.dark .table-search::placeholder{color:var(--muted)}
+html.dark .section-title{color:var(--muted)}
+html.dark .section-title::after{background:var(--border)}
+html.dark .insight-card{background:var(--blue-pale);border-color:var(--blue)}
+html.dark .insight-title{color:var(--blue)}
+html.dark .insight-text{color:var(--text)}
+html.dark .lb-row{background:#1A2535;border-color:var(--border)}
+html.dark .lb-row:hover{border-color:#3A5080}
+html.dark .lb-row.top1{background:linear-gradient(135deg,#2A2215,#322B10);border-color:#7C6200}
+html.dark .lb-row.top2{background:linear-gradient(135deg,#1A2535,#1E2D42);border-color:#2A4070}
+html.dark .lb-row.top3{background:linear-gradient(135deg,#2A1E15,#32251A);border-color:#7C4C20}
+html.dark .lb-metric{background:var(--card);border-color:var(--border)}
+html.dark .lb-insight{background:var(--blue-pale);border-color:var(--blue)}
+html.dark .lb-bar-bg{background:var(--border)}
+html.dark .sync-banner{background:#162032;border-color:var(--border);color:#7DB8FF}
+html.dark .sync-banner.error{background:#2D1515;border-color:#5B2020;color:#F87171}
+html.dark .sync-banner.success{background:#152815;border-color:#1F4020;color:#4ADE80}
+html.dark .sync-spinner{border-color:#2A3F6B;border-top-color:#4D9EFF}
+html.dark .kpi-trend.up{background:#152B15;color:#4ADE80}
+html.dark .kpi-trend.down{background:#2D1515;color:#F87171}
+html.dark .kpi-trend.flat{background:#1A2535;color:var(--muted)}
+html.dark .badge-yes{background:#152B15;color:#4ADE80}
+html.dark .badge-no{background:#2D1515;color:#F87171}
+html.dark .badge-onco{background:#1A2B4A;color:#7DB8FF}
+html.dark .badge-opthal{background:#152B15;color:#78BE20}
+html.dark .badge-nsp{background:#2A2010;color:#FBC88A}
+html.dark .badge-isp{background:#231A35;color:#C4B5FD}
+html.dark .badge-advisory{background:#2A1A22;color:#F9A8D4}
+html.dark .insight-tag.positive{background:#152B15;color:#4ADE80}
+html.dark .insight-tag.neutral{background:#2A2010;color:#FBC88A}
+html.dark .insight-tag.warning{background:#2D1515;color:#F87171}
+html.dark .toast{background:#D4DCE8;color:#0D1623}
+/* Password overlay dark mode */
+html.dark #pwOverlay{background:#0A1020}
+html.dark .pw-card{background:#162032;border:1px solid var(--border);box-shadow:0 4px 40px rgba(0,0,0,.6)}
+html.dark .pw-input{background:#0D1623;color:var(--text);border-color:var(--border)}
+html.dark .pw-input:focus{border-color:var(--blue);background:#162032;box-shadow:0 0 0 2px rgba(77,158,255,.15)}
+html.dark .pw-title{color:var(--text)}
+html.dark .pw-sub{color:var(--muted)}
+html.dark .pw-footer{color:var(--muted);border-top-color:var(--border)}
+html.dark .pw-toggle{color:var(--muted)}
+html.dark .pw-toggle:hover{color:var(--blue)}
+html.dark .pw-divider{background:var(--blue)}
+
 /* ── PASSWORD OVERLAY ─────────────────────────────────────────── */
 #pwOverlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s ease}
 #pwOverlay.fade-out{opacity:0;pointer-events:none}
@@ -270,6 +348,7 @@ tr:hover td{background:#FAFBFE}
   <div class="header-right">
     <div class="header-live" title="Data loaded"></div>
     <div class="header-badge" id="lastUpdated">194 Webinars</div>
+    <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
   </div>
 </header>
 
@@ -481,7 +560,9 @@ const destroyChart = id => { if(charts[id]){charts[id].destroy();delete charts[i
 const destroySpark = id => { if(sparkCharts[id]){sparkCharts[id].destroy();delete sparkCharts[id];} };
 
 Chart.defaults.font.family = 'Inter';
-Chart.defaults.color = '#64748B';
+Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#8899B0' : '#64748B';
+
+const gridC = () => document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TOOLTIP STYLE
@@ -826,7 +907,7 @@ function renderCharts() {
       },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:11}}},
-        y:{beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{stepSize:1,font:{size:11}}}
+        y:{beginAtZero:true, grid:{color:gridC()}, ticks:{stepSize:1,font:{size:11}}}
       }
     }
   });
@@ -857,7 +938,7 @@ function renderCharts() {
       },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:11}}},
-        y:{beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11}}}
+        y:{beginAtZero:true, grid:{color:gridC()}, ticks:{font:{size:11}}}
       }
     }
   });
@@ -888,7 +969,7 @@ function renderCharts() {
       },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{stepSize:1,font:{size:10}}}
+        y:{beginAtZero:true, grid:{color:gridC()}, ticks:{stepSize:1,font:{size:10}}}
       }
     }
   });
@@ -923,7 +1004,7 @@ function renderCharts() {
       },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:false, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10}}}
+        y:{beginAtZero:false, grid:{color:gridC()}, ticks:{font:{size:10}}}
       }
     }
   });
@@ -1156,9 +1237,22 @@ if (sessionStorage.getItem('bayer_auth') === '1') {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DARK MODE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function toggleDark() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('bayer_dark', isDark ? '1' : '0');
+  document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
+  Chart.defaults.color = isDark ? '#8899B0' : '#64748B';
+  refresh();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // BOOT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MONTH_ORDER = getSortedMonths(RAW_DATA); // derive month order from static data
+// Sync dark toggle icon to stored preference
+document.getElementById('darkToggle').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
 initFilters();
 refresh();                      // render immediately with static data
 syncFromSheets();               // then pull live data from Google Sheets (rebuilds month order)
