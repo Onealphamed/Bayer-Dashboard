@@ -784,77 +784,48 @@ function refresh() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TARGET TRACKER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function targetCardHTML(label, icon, count, monthsElapsed, monthsRemaining) {
+  const TARGET    = 200;
+  const pct       = Math.min(Math.round(count / TARGET * 100), 100);
+  const needed    = Math.max(TARGET - count, 0);
+  const currAvg   = (count / monthsElapsed).toFixed(1);
+  const reqAvg    = monthsRemaining > 0 ? (needed / monthsRemaining).toFixed(1) : (count >= TARGET ? 'Done' : 'N/A');
+  const achieved  = count >= TARGET;
+  const onTrack   = !achieved && parseFloat(currAvg) >= parseFloat(reqAvg);
+  const badgeCls  = achieved ? 'target-badge-achieved' : onTrack ? 'target-badge-track' : 'target-badge-behind';
+  const badgeTxt  = achieved ? 'Target Achieved' : onTrack ? 'On Track' : 'Behind Target';
+  const barColor  = achieved ? '#16A34A' : onTrack ? '#F59E0B' : '#DC2626';
+  const reqColor  = achieved ? '#16A34A' : onTrack ? '#F59E0B' : '#DC2626';
+  return '<div class="target-card">'
+    + '<div class="target-header"><div>'
+    + '<div class="target-title">' + icon + ' ' + label + '</div>'
+    + '<div class="target-subtitle">2026 Annual Target &middot; ' + TARGET + ' webinars</div>'
+    + '</div><span class="' + badgeCls + '">' + badgeTxt + '</span></div>'
+    + '<div class="target-progress-wrap">'
+    + '<div class="target-progress-bar-bg"><div class="target-progress-bar" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
+    + '<div class="target-progress-labels">'
+    + '<span><strong>' + count + '</strong> done</span>'
+    + '<span><strong>' + pct + '%</strong> of ' + TARGET + '</span>'
+    + '<span><strong>' + needed + '</strong> remaining</span>'
+    + '</div></div>'
+    + '<div class="target-rr-row">'
+    + '<div class="target-rr"><div class="target-rr-val" style="color:' + COLORS.onco + '">' + currAvg + '</div>'
+    + '<div class="target-rr-lbl">Current Avg<br/>webinars / month</div></div>'
+    + '<div class="target-rr"><div class="target-rr-val" style="color:' + reqColor + '">' + reqAvg + '</div>'
+    + '<div class="target-rr-lbl">Required Avg<br/>per month to hit ' + TARGET + '</div></div>'
+    + '</div></div>';
+}
+
 function renderTargets() {
-  const TARGET = 200;
-  const now = new Date();
-  const currentCalMonth = now.getMonth(); // 0-indexed
-
-  // Targets are 2026-only — always show 2026 data regardless of year filter
-  const targetYear = 2026;
-
-  const yearData  = RAW_DATA.filter(x => getYear(x) === targetYear);
-  const oncoData  = yearData.filter(x => x.therapy === 'Onco');
-  const ophthData = yearData.filter(x => x.therapy === 'Opthal');
-
-  // Distinct months that have data in this year (for current run-rate denominator)
-  const activeMonthNames = [...new Set(yearData.map(x => x.month))];
-  const monthsElapsed    = activeMonthNames.length || 1;
-
-  // Months remaining after current month (Jun–Dec 2026)
-  const monthsRemaining = 11 - currentCalMonth;
-
-  function stats(count, color) {
-    const pct        = Math.min(Math.round(count / TARGET * 100), 100);
-    const needed     = Math.max(TARGET - count, 0);
-    const currentRR  = (count / monthsElapsed).toFixed(1);
-    const reqRR      = monthsRemaining > 0 ? (needed / monthsRemaining).toFixed(1) : (count >= TARGET ? '✓' : '—');
-    const onTrack    = parseFloat(currentRR) >= parseFloat(reqRR);
-    const achieved   = count >= TARGET;
-    const badgeCls   = achieved ? 'target-badge-achieved' : onTrack ? 'target-badge-track' : 'target-badge-behind';
-    const badgeTxt   = achieved ? 'Target Achieved' : onTrack ? 'On Track' : 'Behind Target';
-    const barColor   = achieved ? '#16A34A' : onTrack ? '#F59E0B' : '#DC2626';
-    return { count, pct, needed, currentRR, reqRR, badgeCls, badgeTxt, barColor, achieved };
-  }
-
-  const onco  = stats(oncoData.length,  COLORS.onco);
-  const opth  = stats(ophthData.length, COLORS.opthal);
-
-  function cardHTML(label, icon, s) {
-    return `
-    <div class="target-card">
-      <div class="target-header">
-        <div>
-          <div class="target-title">${icon} ${label}</div>
-          <div class="target-subtitle">2026 Annual Target · ${TARGET} webinars</div>
-        </div>
-        <span class="${s.badgeCls}">${s.badgeTxt}</span>
-      </div>
-      <div class="target-progress-wrap">
-        <div class="target-progress-bar-bg">
-          <div class="target-progress-bar" style="width:${s.pct}%;background:${s.barColor}"></div>
-        </div>
-        <div class="target-progress-labels">
-          <span><strong>${s.count}</strong> completed</span>
-          <span><strong>${s.pct}%</strong> of ${TARGET}</span>
-          <span><strong>${s.needed}</strong> remaining</span>
-        </div>
-      </div>
-      <div class="target-rr-row">
-        <div class="target-rr">
-          <div class="target-rr-val" style="color:${COLORS.onco}">${s.currentRR}</div>
-          <div class="target-rr-lbl">Current Avg<br/>webinars / month</div>
-        </div>
-        <div class="target-rr">
-          <div class="target-rr-val" style="color:${s.barColor}">${s.reqRR}</div>
-          <div class="target-rr-lbl">Required Avg<br/>per month to hit ${TARGET}</div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  document.getElementById('targetGrid').innerHTML =
-    cardHTML('Oncology',     '🔬', onco) +
-    cardHTML('Ophthalmology','👁️', opth);
+  const now             = new Date();
+  const monthsElapsed   = [...new Set(RAW_DATA.filter(x => getYear(x) === 2026).map(x => x.month))].length || 1;
+  const monthsRemaining = Math.max(11 - now.getMonth(), 0);
+  const oncoCount       = RAW_DATA.filter(x => getYear(x) === 2026 && x.therapy === 'Onco').length;
+  const ophthCount      = RAW_DATA.filter(x => getYear(x) === 2026 && x.therapy === 'Opthal').length;
+  const el              = document.getElementById('targetGrid');
+  if (!el) return;
+  el.innerHTML = targetCardHTML('Oncology', '🔬', oncoCount, monthsElapsed, monthsRemaining)
+               + targetCardHTML('Ophthalmology', '👁', ophthCount, monthsElapsed, monthsRemaining);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
