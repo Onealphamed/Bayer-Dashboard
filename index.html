@@ -804,7 +804,6 @@ function renderKPIs() {
   const actKPIs = [
     { id:'spark-ov', label:'Oncology Webinars', value:fmt(currOnco), trend:trendBadge(currOnco,prevOnco), sub:'Total sessions', icon:'🔬', sparkData:spark.oncoVol, sparkColor:COLORS.onco },
     { id:'spark-pv', label:'Ophthal Webinars',  value:fmt(currOpthal), trend:trendBadge(currOpthal,prevOpthal), sub:'Total sessions', icon:'👁️', sparkData:spark.opthalVol, sparkColor:COLORS.opthal },
-    { id:'spark-am', label:'Active Months',      value:fmt(months.size), trend:'', sub:'Months with activity', icon:'📅', sparkData:spark.totalVol, sparkColor:'#8B5CF6' },
     { id:'spark-av', label:'Avg / Month',        value:months.size?fmt(d.length/months.size,1):'—', trend:'', sub:'Overall cadence', icon:'📈', sparkData:spark.totalVol, sparkColor:'#F59E0B' },
   ];
   const impKPIs = [
