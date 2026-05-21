@@ -1093,42 +1093,58 @@ function renderYearVsYear() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function renderInsights() {
   // Insights use year filter only — therapy selection does not affect them
-  const d     = activeYears.size === 0 ? RAW_DATA : RAW_DATA.filter(x => activeYears.has(getYear(x)));
-  const onco  = d.filter(x => x.therapy === 'Onco');
-  const opthal= d.filter(x => x.therapy === 'Opthal');
-  const total = d.length;
+  const d      = activeYears.size === 0 ? RAW_DATA : RAW_DATA.filter(x => activeYears.has(getYear(x)));
+  const onco   = d.filter(x => x.therapy === 'Onco');
+  const opthal = d.filter(x => x.therapy === 'Opthal');
+  const denom  = (onco.length + opthal.length) || 1;
 
-  // Monthly counts for trend (sorted by date)
-  const monthsSorted = getSortedMonths(d);
-  const oncoByMonth  = monthsSorted.map(m => d.filter(x => x.month === m && x.therapy === 'Onco').length);
-  const opthalByMonth= monthsSorted.map(m => d.filter(x => x.month === m && x.therapy === 'Opthal').length);
-  const last3o  = oncoByMonth.slice(-3);
-  const last3p  = opthalByMonth.slice(-3);
-  const oncoTrend  = last3o.length >= 2 ? last3o[last3o.length-1] - last3o[0] : 0;
-  const opthalTrend= last3p.length >= 2 ? last3p[last3p.length-1] - last3p[0] : 0;
-  const trendDir   = n => n > 0 ? '↑ growing' : n < 0 ? '↓ declining' : '→ flat';
+  // Build year+month pairs to avoid cross-year name collisions (e.g. Feb 2025 ≠ Feb 2026)
+  const ymMap = {};
+  d.forEach(x => {
+    const yr = getYear(x);
+    if (!yr || !x.month) return;
+    const key = yr + '-' + x.month;
+    if (!ymMap[key]) {
+      ymMap[key] = { year: yr, month: x.month, date: parseDateLoose(x.date), onco: 0, opthal: 0, total: 0 };
+    }
+    if (x.therapy === 'Onco')        ymMap[key].onco++;
+    else if (x.therapy === 'Opthal') ymMap[key].opthal++;
+    ymMap[key].total++;
+  });
+  const ymList = Object.values(ymMap).filter(ym => ym.date).sort((a, b) => a.date - b.date);
 
-  // Peak month
-  const monthTotals = monthsSorted.map(m => d.filter(x => x.month === m).length);
-  const peakIdx     = monthTotals.indexOf(Math.max(...monthTotals));
-  const peakMonth   = monthsSorted[peakIdx] || '—';
-  const peakCount   = monthTotals[peakIdx] || 0;
+  // Trend: compare most recent month vs the one before it
+  const lastYM      = ymList[ymList.length - 1];
+  const prevYM      = ymList[ymList.length - 2];
+  const oncoTrend   = (lastYM && prevYM) ? lastYM.onco   - prevYM.onco   : 0;
+  const opthalTrend = (lastYM && prevYM) ? lastYM.opthal - prevYM.opthal : 0;
+  const trendDir    = n => n > 0 ? '↑ growing' : n < 0 ? '↓ declining' : '→ flat';
+
+  // Peak year-month by total webinars
+  const peakYM    = ymList.reduce((best, ym) => ym.total > (best ? best.total : 0) ? ym : best, null);
+  const peakLabel = peakYM ? peakYM.month + ' ' + peakYM.year : '—';
+  const peakCount = peakYM ? peakYM.total : 0;
+
+  // Cadence: use per-therapy active month counts as denominator
+  const activeMonths       = ymList.length || 1;
+  const oncoActiveMonths   = ymList.filter(ym => ym.onco   > 0).length || 1;
+  const opthalActiveMonths = ymList.filter(ym => ym.opthal > 0).length || 1;
 
   const insights = [
     {
       tag: onco.length >= opthal.length ? {cls:'positive',txt:'Onco Leads'} : {cls:'neutral',txt:'Ophthal Leads'},
       title:'📊 Volume Split',
-      text:`Oncology: <strong>${onco.length}</strong> webinars (${total ? Math.round(onco.length/total*100) : 0}%) · Ophthal: <strong>${opthal.length}</strong> webinars (${total ? Math.round(opthal.length/total*100) : 0}%). ${onco.length >= opthal.length ? 'Oncology leads overall volume.' : 'Ophthal leads overall volume.'}`
+      text:`Oncology: <strong>${onco.length}</strong> webinars (${Math.round(onco.length/denom*100)}%) · Ophthal: <strong>${opthal.length}</strong> webinars (${Math.round(opthal.length/denom*100)}%). ${onco.length >= opthal.length ? 'Oncology leads overall volume.' : 'Ophthal leads overall volume.'}`
     },
     {
       tag: {cls:'neutral', txt:'Trend'},
       title:'📅 Recent Trend',
-      text:`In the last 3 months: Oncology is <strong>${trendDir(oncoTrend)}</strong>, Ophthal is <strong>${trendDir(opthalTrend)}</strong>. Peak month: <strong>${peakMonth}</strong> with <strong>${peakCount}</strong> webinars.`
+      text:`Latest month (${lastYM ? lastYM.month + ' ' + lastYM.year : '—'}): Oncology <strong>${trendDir(oncoTrend)}</strong>, Ophthal <strong>${trendDir(opthalTrend)}</strong> vs prior month. Peak: <strong>${peakLabel}</strong> with <strong>${peakCount}</strong> webinars.`
     },
     {
       tag: {cls:'positive', txt:'Cadence'},
       title:'📆 Monthly Cadence',
-      text:`<strong>${monthsSorted.length}</strong> active months total. Avg <strong>${monthsSorted.length ? (total/monthsSorted.length).toFixed(1) : '—'}</strong> webinars/month — Onco avg <strong>${monthsSorted.length ? (onco.length/monthsSorted.length).toFixed(1) : '—'}</strong>, Ophthal avg <strong>${monthsSorted.length ? (opthal.length/monthsSorted.length).toFixed(1) : '—'}</strong>.`
+      text:`<strong>${activeMonths}</strong> active months. Overall avg <strong>${(d.length / activeMonths).toFixed(1)}</strong>/month — Onco <strong>${(onco.length / oncoActiveMonths).toFixed(1)}</strong>/month (${oncoActiveMonths} months), Ophthal <strong>${(opthal.length / opthalActiveMonths).toFixed(1)}</strong>/month (${opthalActiveMonths} months).`
     }
   ];
 
