@@ -461,7 +461,7 @@ html.dark .pw-divider{background:var(--blue)}
         <div class="chart-wrap"><canvas id="chartMonthComp" height="220"></canvas></div>
         <div class="chart-click-hint">↑ Click to cross-filter</div>
       </div>
-      <div class="chart-card">
+      <div class="chart-card" style="align-self:start">
         <div class="chart-header">
           <div>
             <div class="chart-title">Therapy Share</div>
@@ -469,7 +469,7 @@ html.dark .pw-divider{background:var(--blue)}
           </div>
         </div>
         <div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;padding:8px 0">
-          <canvas id="chartDonut" width="180" height="180"></canvas>
+          <canvas id="chartDonut" width="200" height="200"></canvas>
         </div>
       </div>
     </div>
@@ -481,7 +481,7 @@ html.dark .pw-divider{background:var(--blue)}
         <div class="chart-header">
           <div>
             <div class="chart-title">2025 vs 2026 — Monthly Webinar Volume</div>
-            <div class="chart-sub">Side-by-side comparison by calendar month</div>
+            <div class="chart-sub">Side-by-side comparison by calendar month · Oncology &amp; Ophthalmology</div>
           </div>
           <span class="chart-badge">Bar</span>
         </div>
@@ -1146,11 +1146,17 @@ function renderYearVsYear() {
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const labels = MONTHS.map(m => m.slice(0,3));
 
-  const rows2025 = RAW_DATA.filter(d => getYear(d) === 2025);
-  const rows2026 = RAW_DATA.filter(d => getYear(d) === 2026);
+  const r2025 = RAW_DATA.filter(d => getYear(d) === 2025);
+  const r2026 = RAW_DATA.filter(d => getYear(d) === 2026);
 
-  const data2025 = MONTHS.map(m => rows2025.filter(d => d.month === m).length);
-  const data2026 = MONTHS.map(m => rows2026.filter(d => d.month === m).length);
+  const onco2025  = MONTHS.map(m => r2025.filter(d => d.month === m && d.therapy === 'Onco').length);
+  const opth2025  = MONTHS.map(m => r2025.filter(d => d.month === m && d.therapy === 'Opthal').length);
+  const onco2026  = MONTHS.map(m => r2026.filter(d => d.month === m && d.therapy === 'Onco').length);
+  const opth2026  = MONTHS.map(m => r2026.filter(d => d.month === m && d.therapy === 'Opthal').length);
+
+  // totals for tooltip footer
+  const tot2025 = MONTHS.map((_, i) => onco2025[i] + opth2025[i]);
+  const tot2026 = MONTHS.map((_, i) => onco2026[i] + opth2026[i]);
 
   destroyChart('chartYearVsYear');
   charts.chartYearVsYear = new Chart(document.getElementById('chartYearVsYear'), {
@@ -1158,22 +1164,10 @@ function renderYearVsYear() {
     data: {
       labels,
       datasets: [
-        {
-          label: '2025',
-          data: data2025,
-          backgroundColor: 'rgba(0,58,143,0.75)',
-          borderColor: COLORS.onco,
-          borderWidth: 1,
-          borderRadius: 4,
-        },
-        {
-          label: '2026',
-          data: data2026,
-          backgroundColor: 'rgba(120,190,32,0.75)',
-          borderColor: COLORS.opthal,
-          borderWidth: 1,
-          borderRadius: 4,
-        }
+        { label: 'Onco 2025',  data: onco2025, backgroundColor: 'rgba(0,58,143,0.85)',   borderRadius: 3, stack: '2025' },
+        { label: 'Ophthal 2025', data: opth2025, backgroundColor: 'rgba(0,58,143,0.35)', borderRadius: 3, stack: '2025' },
+        { label: 'Onco 2026',  data: onco2026, backgroundColor: 'rgba(120,190,32,0.85)', borderRadius: 3, stack: '2026' },
+        { label: 'Ophthal 2026', data: opth2026, backgroundColor: 'rgba(120,190,32,0.38)', borderRadius: 3, stack: '2026' },
       ]
     },
     options: {
@@ -1185,17 +1179,22 @@ function renderYearVsYear() {
         tooltip: { ...ttStyle(), callbacks: {
           afterBody: ctx => {
             const i = ctx[0]?.dataIndex;
-            const v25 = data2025[i], v26 = data2026[i];
-            if (!v25 || !v26) return [];
-            const diff = v26 - v25;
-            const sign = diff >= 0 ? '▲' : '▼';
-            return [`  ${sign} ${Math.abs(diff)} vs 2025 (${diff >= 0 ? '+' : ''}${((diff/v25)*100).toFixed(0)}%)`];
+            const v25 = tot2025[i], v26 = tot2026[i];
+            const lines = [];
+            if (v25) lines.push('  2025 Total: ' + v25);
+            if (v26) lines.push('  2026 Total: ' + v26);
+            if (v25 && v26) {
+              const diff = v26 - v25;
+              const sign = diff >= 0 ? '▲' : '▼';
+              lines.push('  ' + sign + ' ' + Math.abs(diff) + ' YoY (' + (diff >= 0 ? '+' : '') + ((diff/v25)*100).toFixed(0) + '%)');
+            }
+            return lines;
           }
         }}
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { beginAtZero: true, grid: { color: gridC() }, ticks: { stepSize: 1, font: { size: 11 } } }
+        y: { beginAtZero: true, stacked: true, grid: { color: gridC() }, ticks: { stepSize: 1, font: { size: 11 } } }
       }
     }
   });
