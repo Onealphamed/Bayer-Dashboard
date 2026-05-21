@@ -787,11 +787,10 @@ function refresh() {
 function renderTargets() {
   const TARGET = 200;
   const now = new Date();
-  const currentCalYear  = now.getFullYear();
   const currentCalMonth = now.getMonth(); // 0-indexed
 
-  // Use selected year; if All, default to current calendar year
-  const targetYear = activeYears.size === 1 ? [...activeYears][0] : currentCalYear;
+  // Targets are 2026-only — always show 2026 data regardless of year filter
+  const targetYear = 2026;
 
   const yearData  = RAW_DATA.filter(x => getYear(x) === targetYear);
   const oncoData  = yearData.filter(x => x.therapy === 'Onco');
@@ -827,7 +826,7 @@ function renderTargets() {
       <div class="target-header">
         <div>
           <div class="target-title">${icon} ${label}</div>
-          <div class="target-subtitle">${targetYear} · Annual Target: ${TARGET} webinars</div>
+          <div class="target-subtitle">2026 Annual Target · ${TARGET} webinars</div>
         </div>
         <span class="${s.badgeCls}">${s.badgeTxt}</span>
       </div>
@@ -848,7 +847,7 @@ function renderTargets() {
         </div>
         <div class="target-rr">
           <div class="target-rr-val" style="color:${s.barColor}">${s.reqRR}</div>
-          <div class="target-rr-lbl">Avg Needed<br/>per month to hit ${TARGET}</div>
+          <div class="target-rr-lbl">Required Avg<br/>per month to hit ${TARGET}</div>
         </div>
       </div>
     </div>`;
