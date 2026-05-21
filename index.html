@@ -800,9 +800,8 @@ function renderTargets() {
   const activeMonthNames = [...new Set(yearData.map(x => x.month))];
   const monthsElapsed    = activeMonthNames.length || 1;
 
-  // Months remaining after current month (or 0 if past year)
-  const isCurrentYear   = targetYear === currentCalYear;
-  const monthsRemaining = isCurrentYear ? (11 - currentCalMonth) : 0; // months fully ahead
+  // Months remaining after current month (Jun–Dec 2026)
+  const monthsRemaining = 11 - currentCalMonth;
 
   function stats(count, color) {
     const pct        = Math.min(Math.round(count / TARGET * 100), 100);
