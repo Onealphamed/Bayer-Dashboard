@@ -196,22 +196,29 @@ tr:hover td{background:#FAFBFE}
 }
 /* ── TARGET TRACKER ───────────────────────────────────────────── */
 .target-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:20px}
-.target-card{background:var(--card);border-radius:var(--radius);padding:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
-.target-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-.target-title{font-size:13px;font-weight:700;color:var(--text)}
-.target-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
-.target-badge-achieved{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#DCFCE7;color:#166534}
-.target-badge-track{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#FEF3C7;color:#92400E}
-.target-badge-behind{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#FEE2E2;color:#991B1B}
-.target-progress-wrap{margin-bottom:10px}
-.target-progress-bar-bg{background:var(--border);height:10px;border-radius:5px;overflow:hidden;margin-bottom:6px}
-.target-progress-bar{height:10px;border-radius:5px;transition:width .6s ease}
-.target-progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:500}
-.target-progress-labels strong{color:var(--text)}
-.target-rr-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.target-rr{background:var(--bg);border-radius:8px;padding:12px 14px;border:1px solid var(--border);text-align:center}
-.target-rr-val{font-size:20px;font-weight:700;line-height:1;margin-bottom:3px}
-.target-rr-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.target-card{background:var(--card);border-radius:var(--radius);padding:26px 28px;border:1px solid var(--border);box-shadow:var(--shadow);transition:box-shadow .2s}
+.target-card:hover{box-shadow:var(--shadow-hover)}
+.target-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.target-title{font-size:14px;font-weight:700;color:var(--text)}
+.target-subtitle{font-size:11px;color:var(--muted);margin-top:3px}
+.target-badge-achieved{font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;background:#DCFCE7;color:#166534;letter-spacing:.3px}
+.target-badge-track{font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;background:#FEF3C7;color:#92400E;letter-spacing:.3px}
+.target-badge-behind{font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;background:#FEE2E2;color:#991B1B;letter-spacing:.3px}
+.target-body{display:flex;align-items:center;gap:28px}
+.target-ring-wrap{position:relative;flex-shrink:0;width:130px;height:130px}
+.target-ring-wrap svg{transform:rotate(-90deg)}
+.target-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.target-ring-count{font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.target-ring-pct{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px}
+.target-ring-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+.target-stats{flex:1;display:flex;flex-direction:column;gap:10px}
+.target-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.target-stat{background:var(--bg);border-radius:10px;padding:13px 14px;border:1px solid var(--border);text-align:center}
+.target-stat-val{font-size:22px;font-weight:700;line-height:1;margin-bottom:4px}
+.target-stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);line-height:1.4}
+.target-divider{height:1px;background:var(--border);margin:4px 0}
+.target-months{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:2px 0}
+.target-months strong{color:var(--text);font-weight:600}
 html.dark .target-badge-achieved{background:#152B15;color:#4ADE80}
 html.dark .target-badge-track{background:#2A2010;color:#FBC88A}
 html.dark .target-badge-behind{background:#2D1515;color:#F87171}
@@ -784,36 +791,68 @@ function refresh() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TARGET TRACKER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function targetCardHTML(label, icon, count, monthsElapsed, monthsRemaining) {
-  const TARGET    = 200;
-  const pct       = Math.min(Math.round(count / TARGET * 100), 100);
-  const needed    = Math.max(TARGET - count, 0);
-  const currAvg   = (count / monthsElapsed).toFixed(1);
-  const reqAvg    = monthsRemaining > 0 ? (needed / monthsRemaining).toFixed(1) : (count >= TARGET ? 'Done' : 'N/A');
-  const achieved  = count >= TARGET;
-  const onTrack   = !achieved && parseFloat(currAvg) >= parseFloat(reqAvg);
-  const badgeCls  = achieved ? 'target-badge-achieved' : onTrack ? 'target-badge-track' : 'target-badge-behind';
-  const badgeTxt  = achieved ? 'Target Achieved' : onTrack ? 'On Track' : 'Behind Target';
-  const barColor  = achieved ? '#16A34A' : onTrack ? '#F59E0B' : '#DC2626';
-  const reqColor  = achieved ? '#16A34A' : onTrack ? '#F59E0B' : '#DC2626';
+function targetCardHTML(label, icon, accentColor, count, monthsElapsed, monthsRemaining) {
+  const TARGET   = 200;
+  const pct      = Math.min(Math.round(count / TARGET * 100), 100);
+  const needed   = Math.max(TARGET - count, 0);
+  const currAvg  = (count / monthsElapsed).toFixed(1);
+  const reqAvg   = monthsRemaining > 0 ? (needed / monthsRemaining).toFixed(1) : (count >= TARGET ? '✓' : 'N/A');
+  const achieved = count >= TARGET;
+  const onTrack  = !achieved && parseFloat(currAvg) >= parseFloat(reqAvg);
+  const badgeCls = achieved ? 'target-badge-achieved' : onTrack ? 'target-badge-track' : 'target-badge-behind';
+  const badgeTxt = achieved ? '✓ Achieved' : onTrack ? '↑ On Track' : '↓ Behind';
+  const statusColor = achieved ? '#16A34A' : onTrack ? '#D97706' : '#DC2626';
+
+  // SVG ring — r=54, circumference=339.3
+  const R = 54, C = 2 * Math.PI * R;
+  const trackDash  = C;
+  const fillDash   = (pct / 100) * C;
+  const fillOffset = C - fillDash;
+  const ring = '<svg width="130" height="130" viewBox="0 0 130 130">'
+    + '<circle cx="65" cy="65" r="' + R + '" fill="none" stroke="var(--border)" stroke-width="10"/>'
+    + '<circle cx="65" cy="65" r="' + R + '" fill="none" stroke="' + accentColor + '" stroke-width="10"'
+    + ' stroke-linecap="round"'
+    + ' stroke-dasharray="' + C.toFixed(1) + '"'
+    + ' stroke-dashoffset="' + fillOffset.toFixed(1) + '"'
+    + ' style="transition:stroke-dashoffset .8s ease"/>'
+    + '</svg>';
+
   return '<div class="target-card">'
-    + '<div class="target-header"><div>'
+    // header
+    + '<div class="target-top"><div>'
     + '<div class="target-title">' + icon + ' ' + label + '</div>'
     + '<div class="target-subtitle">2026 Annual Target &middot; ' + TARGET + ' webinars</div>'
     + '</div><span class="' + badgeCls + '">' + badgeTxt + '</span></div>'
-    + '<div class="target-progress-wrap">'
-    + '<div class="target-progress-bar-bg"><div class="target-progress-bar" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
-    + '<div class="target-progress-labels">'
-    + '<span><strong>' + count + '</strong> done</span>'
-    + '<span><strong>' + pct + '%</strong> of ' + TARGET + '</span>'
-    + '<span><strong>' + needed + '</strong> remaining</span>'
+    // body: ring + stats
+    + '<div class="target-body">'
+    // ring
+    + '<div class="target-ring-wrap">'
+    + ring
+    + '<div class="target-ring-center">'
+    + '<div class="target-ring-count" style="color:' + accentColor + '">' + count + '</div>'
+    + '<div class="target-ring-pct">' + pct + '%</div>'
+    + '<div class="target-ring-label">of ' + TARGET + '</div>'
     + '</div></div>'
-    + '<div class="target-rr-row">'
-    + '<div class="target-rr"><div class="target-rr-val" style="color:' + COLORS.onco + '">' + currAvg + '</div>'
-    + '<div class="target-rr-lbl">Current Avg<br/>webinars / month</div></div>'
-    + '<div class="target-rr"><div class="target-rr-val" style="color:' + reqColor + '">' + reqAvg + '</div>'
-    + '<div class="target-rr-lbl">Required Avg<br/>per month to hit ' + TARGET + '</div></div>'
-    + '</div></div>';
+    // stats
+    + '<div class="target-stats">'
+    + '<div class="target-stat-row">'
+    + '<div class="target-stat"><div class="target-stat-val" style="color:' + accentColor + '">' + currAvg + '</div>'
+    + '<div class="target-stat-lbl">Current Avg<br/>/ month</div></div>'
+    + '<div class="target-stat"><div class="target-stat-val" style="color:' + statusColor + '">' + reqAvg + '</div>'
+    + '<div class="target-stat-lbl">Required Avg<br/>/ month</div></div>'
+    + '</div>'
+    + '<div class="target-divider"></div>'
+    + '<div class="target-months">'
+    + '<span>Completed: <strong>' + count + '</strong></span>'
+    + '<span>Remaining: <strong>' + needed + '</strong></span>'
+    + '</div>'
+    + '<div class="target-months">'
+    + '<span>Months elapsed: <strong>' + monthsElapsed + '</strong></span>'
+    + '<span>Months left: <strong>' + monthsRemaining + '</strong></span>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
 }
 
 function renderTargets() {
@@ -824,8 +863,8 @@ function renderTargets() {
   const ophthCount      = RAW_DATA.filter(x => getYear(x) === 2026 && x.therapy === 'Opthal').length;
   const el              = document.getElementById('targetGrid');
   if (!el) return;
-  el.innerHTML = targetCardHTML('Oncology', '🔬', oncoCount, monthsElapsed, monthsRemaining)
-               + targetCardHTML('Ophthalmology', '👁', ophthCount, monthsElapsed, monthsRemaining);
+  el.innerHTML = targetCardHTML('Oncology', '🔬', COLORS.onco, oncoCount, monthsElapsed, monthsRemaining)
+               + targetCardHTML('Ophthalmology', '👁', COLORS.opthal, ophthCount, monthsElapsed, monthsRemaining);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
