@@ -1092,35 +1092,43 @@ function renderYearVsYear() {
 // INSIGHTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function renderInsights() {
-  const d        = currentData;
-  const onco     = d.filter(x=>x.therapy==='Onco');
-  const opthal   = d.filter(x=>x.therapy==='Opthal');
-  const oncoAtt  = onco.filter(x=>x.attendees).map(x=>x.attendees);
-  const opthalAtt= opthal.filter(x=>x.attendees).map(x=>x.attendees);
-  const oncoAvg  = avg(oncoAtt);
-  const opthalAvg= avg(opthalAtt);
-  const stdDev   = arr => { const a=avg(arr); return Math.sqrt(avg(arr.map(x=>(x-a)**2))); };
-  const md       = getMonthlyData();
-  const last3    = md.slice(-3);
-  const oncoTrend= last3.length>=2 ? last3[last3.length-1].oncoCount - last3[0].oncoCount : 0;
-  const opthalTrend= last3.length>=2 ? last3[last3.length-1].opthalCount - last3[0].opthalCount : 0;
-  const trendDir = n => n>0?'↑ growing':n<0?'↓ declining':'→ flat';
+  // Insights use year filter only — therapy selection does not affect them
+  const d     = activeYears.size === 0 ? RAW_DATA : RAW_DATA.filter(x => activeYears.has(getYear(x)));
+  const onco  = d.filter(x => x.therapy === 'Onco');
+  const opthal= d.filter(x => x.therapy === 'Opthal');
+  const total = d.length;
+
+  // Monthly counts for trend (sorted by date)
+  const monthsSorted = getSortedMonths(d);
+  const oncoByMonth  = monthsSorted.map(m => d.filter(x => x.month === m && x.therapy === 'Onco').length);
+  const opthalByMonth= monthsSorted.map(m => d.filter(x => x.month === m && x.therapy === 'Opthal').length);
+  const last3o  = oncoByMonth.slice(-3);
+  const last3p  = opthalByMonth.slice(-3);
+  const oncoTrend  = last3o.length >= 2 ? last3o[last3o.length-1] - last3o[0] : 0;
+  const opthalTrend= last3p.length >= 2 ? last3p[last3p.length-1] - last3p[0] : 0;
+  const trendDir   = n => n > 0 ? '↑ growing' : n < 0 ? '↓ declining' : '→ flat';
+
+  // Peak month
+  const monthTotals = monthsSorted.map(m => d.filter(x => x.month === m).length);
+  const peakIdx     = monthTotals.indexOf(Math.max(...monthTotals));
+  const peakMonth   = monthsSorted[peakIdx] || '—';
+  const peakCount   = monthTotals[peakIdx] || 0;
 
   const insights = [
     {
-      tag: onco.length >= opthal.length ? {cls:'positive',txt:'Onco Leads Volume'} : {cls:'neutral',txt:'Ophthal Leads Volume'},
-      title:'📊 Volume vs Engagement',
-      text:`Oncology runs <strong>${onco.length}</strong> webinars vs Ophthal's <strong>${opthal.length}</strong>. ${oncoAvg>opthalAvg?`Oncology also leads engagement at <strong>${oncoAvg.toFixed(1)}</strong> avg attendees vs <strong>${opthalAvg.toFixed(1)}</strong> for Ophthal — double advantage.`:`Ophthal punches above its weight: <strong>${opthalAvg.toFixed(1)}</strong> avg attendees vs Onco's <strong>${oncoAvg.toFixed(1)}</strong>.`}`
+      tag: onco.length >= opthal.length ? {cls:'positive',txt:'Onco Leads'} : {cls:'neutral',txt:'Ophthal Leads'},
+      title:'📊 Volume Split',
+      text:`Oncology: <strong>${onco.length}</strong> webinars (${total ? Math.round(onco.length/total*100) : 0}%) · Ophthal: <strong>${opthal.length}</strong> webinars (${total ? Math.round(opthal.length/total*100) : 0}%). ${onco.length >= opthal.length ? 'Oncology leads overall volume.' : 'Ophthal leads overall volume.'}`
     },
     {
-      tag: {cls:'neutral', txt:'Trend Pattern'},
+      tag: {cls:'neutral', txt:'Trend'},
       title:'📅 Recent Trend',
-      text:`In the last 3 months: Oncology is <strong>${trendDir(oncoTrend)}</strong>, Ophthal is <strong>${trendDir(opthalTrend)}</strong>. Consistency: Onco σ=${stdDev(oncoAtt).toFixed(0)}, Ophthal σ=${stdDev(opthalAtt).toFixed(0)}. ${stdDev(oncoAtt)<stdDev(opthalAtt)?'<strong>Oncology attendance is more consistent.</strong>':'<strong>Ophthal attendance is more consistent.</strong>'}`
+      text:`In the last 3 months: Oncology is <strong>${trendDir(oncoTrend)}</strong>, Ophthal is <strong>${trendDir(opthalTrend)}</strong>. Peak month: <strong>${peakMonth}</strong> with <strong>${peakCount}</strong> webinars.`
     },
     {
-      tag: {cls: Math.abs(oncoAvg-opthalAvg)>10?'warning':'positive', txt:'Efficiency'},
-      title:'⚡ Efficiency Gap',
-      text:`${oncoAvg>opthalAvg?'Oncology':'Ophthal'} leads at <strong>${Math.max(oncoAvg,opthalAvg).toFixed(1)}</strong> attendees/session vs <strong>${Math.min(oncoAvg,opthalAvg).toFixed(1)}</strong>. ${Math.abs(oncoAvg-opthalAvg)>10?`A <strong>${Math.abs(oncoAvg-opthalAvg).toFixed(0)}-point gap</strong> — consider replicating the winning therapy's format.`:'Therapies are broadly aligned in efficiency.'}`
+      tag: {cls:'positive', txt:'Cadence'},
+      title:'📆 Monthly Cadence',
+      text:`<strong>${monthsSorted.length}</strong> active months total. Avg <strong>${monthsSorted.length ? (total/monthsSorted.length).toFixed(1) : '—'}</strong> webinars/month — Onco avg <strong>${monthsSorted.length ? (onco.length/monthsSorted.length).toFixed(1) : '—'}</strong>, Ophthal avg <strong>${monthsSorted.length ? (opthal.length/monthsSorted.length).toFixed(1) : '—'}</strong>.`
     }
   ];
 
