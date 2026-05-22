@@ -40,6 +40,57 @@ body{font-family:'Inter',sans-serif;background:#F5F7FA;color:#1A2B4A;min-height:
 .tab-btn:hover{color:var(--text)}
 .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
 
+/* ── KOL TAB ──────────────────────────────────────────────────── */
+.kol-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin-bottom:20px}
+.kol-stat-card{background:var(--card);border-radius:var(--radius);padding:22px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.kol-stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.kol-stat-val{font-size:32px;font-weight:700;line-height:1;color:var(--blue)}
+.kol-stat-val.green{color:var(--green)}
+.kol-stat-val.purple{color:#7C3AED}
+.kol-stat-sub{font-size:11px;color:var(--muted)}
+.kol-split-bar{height:10px;border-radius:5px;overflow:hidden;display:flex;margin-top:6px}
+.kol-split-seg{height:100%;transition:width .6s ease}
+.kol-split-legend{display:flex;gap:14px;font-size:10px;font-weight:600;margin-top:6px}
+.kol-split-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.kol-two-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.kol-three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.kol-card{background:var(--card);border-radius:var(--radius);padding:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.kol-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.kol-card-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.kol-list{display:flex;flex-direction:column;gap:8px}
+.kol-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border)}
+.kol-row:hover{border-color:var(--blue);transform:translateX(2px);transition:all .15s}
+.kol-rank{font-size:10px;font-weight:700;color:var(--muted);width:18px;text-align:center;flex-shrink:0}
+.kol-rank.gold{color:#D97706}
+.kol-rank.silver{color:#6B7280}
+.kol-rank.bronze{color:#92400E}
+.kol-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.kol-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.kol-meta{font-size:10px;color:var(--muted);margin-top:1px}
+.kol-badge-count{font-size:11px;font-weight:700;background:var(--blue-pale);color:var(--blue);padding:3px 9px;border-radius:20px;flex-shrink:0}
+.kol-badge-count.green{background:#F0FDF4;color:#166534}
+.kol-isp-card{background:linear-gradient(135deg,#0D1B2E 0%,#003A8F 100%);border-radius:var(--radius);padding:22px;border:none;box-shadow:var(--shadow)}
+.kol-isp-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.5);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.kol-isp-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+.kol-isp-list{display:flex;flex-direction:column;gap:7px}
+.kol-isp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.kol-isp-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.kol-isp-name{flex:1;font-size:12px;font-weight:600;color:#fff}
+.kol-isp-meta{font-size:10px;color:rgba(255,255,255,.45);margin-top:1px}
+.kol-isp-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(120,190,32,.2);color:#A3E635;flex-shrink:0}
+.kol-therapy-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:7px}
+.kol-therapy-label{font-size:12px;font-weight:600;color:var(--text);width:90px;flex-shrink:0}
+.kol-therapy-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.kol-therapy-bar{height:8px;border-radius:4px;transition:width .6s ease}
+.kol-therapy-count{font-size:12px;font-weight:700;color:var(--text);width:28px;text-align:right;flex-shrink:0}
+.kol-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+html.dark .kol-stat-card,html.dark .kol-card{background:var(--card);border-color:var(--border)}
+html.dark .kol-row{background:var(--bg);border-color:var(--border)}
+html.dark .kol-badge-count{background:#1e2d4a;color:#60A5FA}
+html.dark .kol-therapy-row{background:var(--bg)}
+html.dark .kol-isp-card{background:linear-gradient(135deg,#0a1220 0%,#002060 100%)}
+@media(max-width:900px){.kol-stat-grid{grid-template-columns:1fr 1fr}.kol-two-col,.kol-three-col{grid-template-columns:1fr}}
+
 /* ── FILTER BAR ───────────────────────────────────────────────── */
 .filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .filter-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
@@ -390,6 +441,7 @@ html.dark .pw-divider{background:var(--blue)}
 <!-- TABS -->
 <nav class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('exec',this)">📊 Executive Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('kol',this)">🎤 Speaker Intelligence</button>
 </nav>
 
 <!-- FILTERS -->
@@ -520,6 +572,59 @@ html.dark .pw-divider{background:var(--blue)}
     </div>
 
   </div><!-- /exec -->
+
+  <!-- TAB 2: SPEAKER INTELLIGENCE -->
+  <div class="tab-panel" id="panel-kol">
+
+    <!-- ROW 1: STAT CARDS -->
+    <div class="section-title" style="margin-top:0">KOL Engagement Overview</div>
+    <div class="kol-stat-grid" id="kolStatGrid"></div>
+
+    <!-- ROW 2: SPLIT BAR CARD + ENGAGEMENT FREQUENCY -->
+    <div class="kol-two-col">
+      <div class="kol-card">
+        <div class="kol-card-title">Session Type Breakdown</div>
+        <div id="kolSplitBar"></div>
+      </div>
+      <div class="kol-card">
+        <div class="kol-card-title">Therapy Mix</div>
+        <div id="kolTherapyMix"></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: TOP KOLs + ISP SPOTLIGHT -->
+    <div class="kol-two-col">
+      <div class="kol-card">
+        <div class="kol-card-title">Top Speakers — All Sessions</div>
+        <div class="kol-list" id="kolTopList"></div>
+      </div>
+      <div class="kol-isp-card">
+        <div class="kol-isp-title">⭐ ISP KOL Spotlight</div>
+        <div class="kol-isp-list" id="kolIspList"></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: MONTHLY TREND CHART -->
+    <div class="section-title">Monthly KOL Engagement</div>
+    <div class="chart-card" style="margin-bottom:var(--gap)">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Unique KOLs per Month</div>
+          <div class="chart-sub">How many distinct speakers were engaged each month</div>
+        </div>
+        <span class="chart-badge">Bar</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartKolMonthly" height="100"></canvas></div>
+    </div>
+
+    <!-- ROW 5: NSP KOLs list -->
+    <div class="section-title">NSP Speakers</div>
+    <div class="kol-card">
+      <div class="kol-card-title">NSP Speakers</div>
+      <div class="kol-list" id="kolNspList"></div>
+    </div>
+
+  </div><!-- /kol -->
 
 
 </div><!-- /main -->
@@ -786,6 +891,7 @@ function refresh() {
   renderYearVsYear();
   renderInsights();
   renderTable();
+  renderKOLs();
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1269,6 +1375,247 @@ function renderInsights() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// KOL HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+function parseKOLNames(raw) {
+  if (!raw || !raw.trim()) return [];
+  return raw.split(/[,;\/\n]+/)
+    .map(n => toTitleCase(n.trim().replace(/\s+/g, ' ')))
+    .filter(n => n.length > 1);
+}
+
+// Normalise a display name to a stable key for dedup (first + last word, lowercase)
+function kolKey(name) {
+  const parts = name.trim().toLowerCase().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return parts[0] + ' ' + parts[parts.length - 1];
+}
+
+function buildKOLMap(data) {
+  const map = {}; // key -> { name, sessions:[], therapy:Set, types:Set }
+  data.forEach(row => {
+    const names = Array.isArray(row.kols) ? row.kols : [];
+    names.forEach(raw => {
+      const k = kolKey(raw);
+      if (!k) return;
+      if (!map[k]) map[k] = { name: raw, sessions: [], therapies: new Set(), types: new Set() };
+      map[k].sessions.push(row);
+      map[k].therapies.add(row.therapy);
+      map[k].types.add(row.type);
+      // prefer longer/better capitalised name
+      if (raw.length > map[k].name.length) map[k].name = raw;
+    });
+  });
+  return Object.values(map);
+}
+
+function kolAvatarColor(name, alpha) {
+  const palette = ['#003A8F','#78BE20','#7C3AED','#D97706','#DC2626','#0891B2','#059669'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return palette[Math.abs(h) % palette.length];
+}
+
+function initials(name) {
+  const p = name.trim().split(/\s+/);
+  return (p[0][0] + (p[p.length-1][0]||'')).toUpperCase();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER KOLs TAB
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderKOLs() {
+  const allKols = buildKOLMap(RAW_DATA);
+  const totalUnique = allKols.length;
+
+  if (totalUnique === 0) {
+    ['kolStatGrid','kolSplitBar','kolTherapyMix','kolTopList','kolIspList','kolNspList'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="kol-empty">No KOL data yet — add speaker names to the Google Sheet.</div>';
+    });
+    destroyChart('chartKolMonthly');
+    return;
+  }
+
+  // Aggregate counts
+  const ispKols = buildKOLMap(RAW_DATA.filter(r => r.type === 'ISP'));
+  const nspKols = buildKOLMap(RAW_DATA.filter(r => r.type === 'NSP'));
+  const oncoKols = buildKOLMap(RAW_DATA.filter(r => r.therapy === 'Onco'));
+  const opthKols = buildKOLMap(RAW_DATA.filter(r => r.therapy === 'Opthal'));
+  const repeatKols = allKols.filter(k => k.sessions.length > 1);
+  const totalSessions = allKols.reduce((s, k) => s + k.sessions.length, 0);
+
+  // ── STAT CARDS ──
+  const statGrid = document.getElementById('kolStatGrid');
+  statGrid.innerHTML = [
+    { label:'Total Unique KOLs', val: totalUnique, sub:'Distinct speakers engaged', cls:'', icon:'🎤' },
+    { label:'ISP KOLs', val: ispKols.length, sub:'In ISP sessions', cls:'green', icon:'⭐' },
+    { label:'NSP KOLs', val: nspKols.length, sub:'In NSP sessions', cls:'', icon:'📣' },
+    { label:'Repeat Speakers', val: repeatKols.length, sub:'Engaged 2+ times', cls:'purple', icon:'🔁' },
+  ].map(s => `
+    <div class="kol-stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="kol-stat-label">${s.label}</div>
+        <span style="font-size:18px;opacity:.45">${s.icon}</span>
+      </div>
+      <div class="kol-stat-val ${s.cls}">${s.val}</div>
+      <div class="kol-stat-sub">${s.sub}</div>
+    </div>`).join('');
+
+  // ── SESSION TYPE SPLIT BAR ──
+  const ispPct = totalUnique ? Math.round(ispKols.length / totalUnique * 100) : 0;
+  const nspPct = 100 - ispPct;
+  document.getElementById('kolSplitBar').innerHTML = `
+    <div class="kol-split-bar" style="margin-bottom:12px">
+      <div class="kol-split-seg" style="width:${ispPct}%;background:#003A8F"></div>
+      <div class="kol-split-seg" style="width:${nspPct}%;background:#78BE20"></div>
+    </div>
+    <div class="kol-split-legend">
+      <span><span class="kol-split-dot" style="background:#003A8F"></span>ISP — ${ispKols.length} KOLs (${ispPct}%)</span>
+      <span><span class="kol-split-dot" style="background:#78BE20"></span>NSP — ${nspKols.length} KOLs (${nspPct}%)</span>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px">Session Appearances</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="kol-stat-card" style="padding:12px">
+          <div class="kol-stat-label">One-Time</div>
+          <div class="kol-stat-val" style="font-size:24px">${totalUnique - repeatKols.length}</div>
+          <div class="kol-stat-sub">spoke once</div>
+        </div>
+        <div class="kol-stat-card" style="padding:12px">
+          <div class="kol-stat-label">Repeat</div>
+          <div class="kol-stat-val purple" style="font-size:24px">${repeatKols.length}</div>
+          <div class="kol-stat-sub">2+ sessions</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── THERAPY MIX ──
+  const maxT = Math.max(oncoKols.length, opthKols.length, 1);
+  document.getElementById('kolTherapyMix').innerHTML = [
+    { label:'Oncology', count: oncoKols.length, color: COLORS.onco },
+    { label:'Ophthalmology', count: opthKols.length, color: COLORS.opthal },
+  ].map(t => `
+    <div class="kol-therapy-row">
+      <div class="kol-therapy-label">${t.label}</div>
+      <div class="kol-therapy-bar-wrap">
+        <div class="kol-therapy-bar" style="width:${Math.round(t.count/maxT*100)}%;background:${t.color}"></div>
+      </div>
+      <div class="kol-therapy-count">${t.count}</div>
+    </div>`).join('')
+  + `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Cross-therapy KOLs</div>
+      <div style="font-size:24px;font-weight:700;color:#7C3AED">${allKols.filter(k => k.therapies.size > 1).length}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">speakers across both therapy areas</div>
+    </div>`;
+
+  // ── TOP SPEAKERS LIST ──
+  const sorted = [...allKols].sort((a,b) => b.sessions.length - a.sessions.length);
+  const top10 = sorted.slice(0, 10);
+  const rankClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+  document.getElementById('kolTopList').innerHTML = top10.length
+    ? top10.map((k, i) => {
+        const col = kolAvatarColor(k.name);
+        const therapyLabel = [...k.therapies].join(' · ');
+        const typeLabel = [...k.types].join(' · ');
+        return `<div class="kol-row">
+          <div class="kol-rank ${rankClass(i)}">${i < 3 ? ['🥇','🥈','🥉'][i] : (i+1)}</div>
+          <div class="kol-avatar" style="background:${col}">${initials(k.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="kol-name">${k.name}</div>
+            <div class="kol-meta">${therapyLabel} · ${typeLabel}</div>
+          </div>
+          <div class="kol-badge-count${k.sessions.length > 1 ? ' green' : ''}">${k.sessions.length} session${k.sessions.length>1?'s':''}</div>
+        </div>`;
+      }).join('')
+    : '<div class="kol-empty">No KOL data available.</div>';
+
+  // ── ISP SPOTLIGHT ──
+  const ispSorted = [...ispKols].sort((a,b) => b.sessions.length - a.sessions.length);
+  document.getElementById('kolIspList').innerHTML = ispSorted.length
+    ? ispSorted.slice(0, 10).map(k => {
+        const therapyLabel = [...k.therapies].join(' · ');
+        return `<div class="kol-isp-row">
+          <div class="kol-isp-avatar">${initials(k.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="kol-isp-name">${k.name}</div>
+            <div class="kol-isp-meta">${therapyLabel}</div>
+          </div>
+          <div class="kol-isp-pill">${k.sessions.length}×</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:rgba(255,255,255,.35);font-size:12px;padding:12px 0">No ISP KOL data yet.</div>';
+
+  // ── NSP LIST ──
+  const nspSorted = [...nspKols].sort((a,b) => b.sessions.length - a.sessions.length);
+  document.getElementById('kolNspList').innerHTML = nspSorted.length
+    ? nspSorted.slice(0, 10).map((k, i) => {
+        const col = kolAvatarColor(k.name);
+        const therapyLabel = [...k.therapies].join(' · ');
+        return `<div class="kol-row">
+          <div class="kol-rank">${i+1}</div>
+          <div class="kol-avatar" style="background:${col}">${initials(k.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="kol-name">${k.name}</div>
+            <div class="kol-meta">${therapyLabel}</div>
+          </div>
+          <div class="kol-badge-count">${k.sessions.length} session${k.sessions.length>1?'s':''}</div>
+        </div>`;
+      }).join('')
+    : '<div class="kol-empty">No NSP KOL data available.</div>';
+
+  // ── MONTHLY TREND CHART ──
+  const MONTH_ORDER_LOCAL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabels = MONTH_ORDER_LOCAL.map(m => m.slice(0,3));
+  const kolByMonth = MONTH_ORDER_LOCAL.map(m => {
+    const rows = RAW_DATA.filter(r => r.month === m);
+    const keys = new Set();
+    rows.forEach(r => (r.kols||[]).forEach(n => keys.add(kolKey(n))));
+    return keys.size;
+  });
+  const ispByMonth = MONTH_ORDER_LOCAL.map(m => {
+    const rows = RAW_DATA.filter(r => r.month === m && r.type === 'ISP');
+    const keys = new Set();
+    rows.forEach(r => (r.kols||[]).forEach(n => keys.add(kolKey(n))));
+    return keys.size;
+  });
+  const nspByMonth = MONTH_ORDER_LOCAL.map(m => {
+    const rows = RAW_DATA.filter(r => r.month === m && r.type === 'NSP');
+    const keys = new Set();
+    rows.forEach(r => (r.kols||[]).forEach(n => keys.add(kolKey(n))));
+    return keys.size;
+  });
+
+  destroyChart('chartKolMonthly');
+  charts.chartKolMonthly = new Chart(document.getElementById('chartKolMonthly'), {
+    type: 'bar',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { label: 'ISP KOLs', data: ispByMonth, backgroundColor: 'rgba(0,58,143,0.85)', borderRadius: 3, stack: 'kol' },
+        { label: 'NSP KOLs', data: nspByMonth, backgroundColor: 'rgba(120,190,32,0.75)', borderRadius: 3, stack: 'kol' },
+      ]
+    },
+    options: {
+      responsive: true, animation: { duration: 500 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 }, padding: 16 } },
+        tooltip: { ...ttStyle() }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: gridC() }, ticks: { stepSize: 1, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TABLE (preserved + minor polish)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let tableData = [];
@@ -1343,6 +1690,7 @@ function applySheetData(rows) {
   const iA = col(['attend']);
   const iS = col(['sales', 'person', 'rep']);
   const iR = col(['report']);
+  const iK = col(['kol', 'speaker', 'faculty']);
   if (iT < 0 || iE < 0) throw new Error('Therapy or Event column not found — check sheet headers.');
   const parsed = rows.slice(1)
     .filter(r => r[iT] && r[iT].trim())
@@ -1356,6 +1704,7 @@ function applySheetData(rows) {
       attendees:  iA >= 0 && r[iA] ? parseInt(r[iA]) || null : null,
       salesperson:iS >= 0 && r[iS] ? r[iS].trim() || null : null,
       reported:   iR >= 0 ? (r[iR] || '').toLowerCase() === 'yes' : true,
+      kols:       iK >= 0 && r[iK] ? parseKOLNames(r[iK]) : [],
     }));
   RAW_DATA.length = 0;
   parsed.forEach(x => RAW_DATA.push(x));
