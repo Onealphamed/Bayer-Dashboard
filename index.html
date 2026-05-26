@@ -1717,16 +1717,52 @@ function setBanner(state, msg) {
   if (state === 'success') setTimeout(() => setBanner('hide'), 3000);
 }
 
+const CACHE_KEY     = 'bayer_data_cache';
+const CACHE_TS_KEY  = 'bayer_data_ts';
+
+// Save successfully synced data to localStorage
+function saveToCache(rows) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(rows));
+    localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+  } catch(e) { console.warn('Cache save failed:', e.message); }
+}
+
+// Load cached data — returns true if cache was applied
+function loadFromCache() {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const ts     = localStorage.getItem(CACHE_TS_KEY);
+    if (!cached) return false;
+    const rows = JSON.parse(cached);
+    if (!Array.isArray(rows) || rows.length === 0) return false;
+    RAW_DATA.length = 0;
+    rows.forEach(x => RAW_DATA.push(x));
+    MONTH_ORDER = getSortedMonths(RAW_DATA);
+    const age = ts ? Math.round((Date.now() - parseInt(ts)) / 60000) : null;
+    const badge = document.getElementById('lastUpdated');
+    badge.textContent = `${rows.length} Webinars · Cached${age !== null ? ` · ${age}m ago` : ''}`;
+    return true;
+  } catch(e) {
+    console.warn('Cache load failed:', e.message);
+    return false;
+  }
+}
+
 async function syncFromSheets() {
   const badge = document.getElementById('lastUpdated');
   setBanner('loading', 'Connecting to Google Sheets…');
   try {
     const res = await fetch(SHEET_CSV_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const count = applySheetData(parseCSV(await res.text()));
+    const csvText = await res.text();
+    const parsed  = parseCSV(csvText);
+    const count   = applySheetData(parsed);
+    // ✅ Auto-save to localStorage after every successful sync
+    saveToCache([...RAW_DATA]);
     const ts = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
     badge.textContent = `${count} Webinars · Live · ${ts}`;
-    document.getElementById('lastUpdated').style.background = 'rgba(120,190,32,0.2)';
+    badge.style.background = 'rgba(120,190,32,0.2)';
     initFilters();
     refresh();
     setBanner('success', `✓ Live data loaded — ${count} webinars from Google Sheets`);
@@ -1786,13 +1822,17 @@ function toggleDark() {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // BOOT
+// Priority: 1) localStorage cache  2) static RAW_DATA  3) live sheet sync
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MONTH_ORDER = getSortedMonths(RAW_DATA); // derive month order from static data
-// Sync dark toggle icon to stored preference
 document.getElementById('darkToggle').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+
+const cacheLoaded = loadFromCache(); // try localStorage first
+if (!cacheLoaded) {
+  MONTH_ORDER = getSortedMonths(RAW_DATA); // fall back to static data
+}
 initFilters();
-refresh();                      // render immediately with static data
-syncFromSheets();               // then pull live data from Google Sheets (rebuilds month order)
+refresh();                      // render immediately (cache or static)
+syncFromSheets();               // always fetch latest from sheet in background
 setInterval(syncFromSheets, 5 * 60 * 1000); // re-sync every 5 minutes
 </script>
 </body>
