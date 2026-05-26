@@ -1931,16 +1931,25 @@ function parseCSV(text) {
 function applySheetData(rows) {
   const hdr = rows[0].map(h => h.toLowerCase().trim());
   const col = key => hdr.findIndex(h => key.some(k => h.includes(k)));
-  const iT = col(['therapy']);
-  const iE = col(['event', 'name']);
+
+  // Flexible header detection — handles "Department", "Therapy", "TA", etc.
+  const iT = col(['therapy', 'dept', 'department', 'division', 'ta', 'area']);
+  const iE = col(['event', 'program', 'webinar', 'title', 'name']);
   const iD = col(['date']);
   const iM = col(['month']);
-  const iY = col(['type']);
-  const iA = col(['attend']);
-  const iS = col(['sales', 'person', 'rep']);
-  const iR = col(['report']);
-  const iK = col(['kol', 'speaker', 'faculty']);
-  if (iT < 0 || iE < 0) throw new Error('Therapy or Event column not found — check sheet headers.');
+  const iY = col(['type', 'category', 'session']);
+  const iA = col(['attend', 'attendance', 'participants', 'count', 'hcp']);
+  const iS = col(['sales', 'person', 'rep', 'mr', 'territory', 'executive']);
+  const iR = col(['report', 'status', 'complete', 'done']);
+  const iK = col(['kol', 'speaker', 'faculty', 'doctor', 'physician']);
+
+  // Log actual headers to console for easy debugging
+  console.log('Sheet headers detected:', hdr);
+  console.log('Column map → T:', iT, 'E:', iE, 'D:', iD, 'M:', iM, 'Y:', iY, 'A:', iA, 'S:', iS, 'R:', iR, 'K:', iK);
+
+  if (iT < 0 || iE < 0) {
+    throw new Error(`Column not found — actual headers: [${hdr.slice(0,12).join(' | ')}]`);
+  }
   const parsed = rows.slice(1)
     .filter(r => r[iT] && r[iT].trim())
     .map((r, i) => ({
