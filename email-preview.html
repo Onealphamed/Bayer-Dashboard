@@ -2,66 +2,97 @@
 <html>
 <head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Georgia',serif;background:#E8E8E8;padding:40px 20px}
-  .wrap{max-width:640px;margin:0 auto;background:#fff;border-top:4px solid #003A8F}
+  body{font-family:'Arial',sans-serif;background:#E8E8E8;padding:40px 20px}
+  .wrap{max-width:660px;margin:0 auto;background:#fff;border-top:4px solid #003A8F}
+
   /* HEADER */
-  .hdr{padding:32px 40px 28px;border-bottom:1px solid #E5E5E5}
-  .hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
-  .hdr-logo-row{display:flex;align-items:center;gap:12px}
-  .hdr-logo{width:36px;height:36px}
-  .hdr-company{font-family:'Arial',sans-serif;font-size:11px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase}
-  .hdr-meta{font-family:'Arial',sans-serif;font-size:10px;color:#999;text-align:right;line-height:1.8}
-  .hdr-title{font-size:22px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif;letter-spacing:-.3px;margin-bottom:6px}
-  .hdr-sub{font-family:'Arial',sans-serif;font-size:11px;color:#666;letter-spacing:.5px;text-transform:uppercase}
-  /* EXECUTIVE SUMMARY */
-  .exec{padding:24px 40px;background:#F9F9F9;border-bottom:1px solid #E5E5E5}
-  .exec-label{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
-  .exec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #E0E0E0}
-  .exec-kpi{padding:18px 16px;text-align:center;border-right:1px solid #E0E0E0}
-  .exec-kpi:last-child{border-right:none}
-  .exec-val{font-size:30px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif;line-height:1}
-  .exec-val.blue{color:#003A8F}
-  .exec-val.green{color:#2D6A2D}
-  .exec-lbl{font-family:'Arial',sans-serif;font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-top:8px;font-weight:600}
-  /* BODY */
-  .body{padding:28px 40px}
-  .section{margin-bottom:28px}
-  .section-title{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#003A8F;padding-bottom:8px;border-bottom:2px solid #003A8F;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
-  /* THERAPY TABLE */
-  table{width:100%;border-collapse:collapse;font-family:'Arial',sans-serif;font-size:12px}
-  th{background:#0D1B2E;color:#fff;padding:9px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
-  th.right{text-align:right}
-  td{padding:10px 14px;border-bottom:1px solid #F0F0F0;color:#333;vertical-align:middle}
-  td.right{text-align:right;font-weight:600;color:#0D1B2E}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:#FAFAFA}
-  .therapy-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;letter-spacing:.5px;text-transform:uppercase}
-  .badge-onco{background:#EEF2FF;color:#003A8F;border:1px solid #C7D2FE}
-  .badge-opth{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
-  /* THIS WEEK */
-  .week-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
-  .week-card{border:1px solid #E5E5E5;padding:18px}
-  .week-card-label{font-family:'Arial',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:10px}
-  .week-card-val{font-size:28px;font-weight:700;color:#0D1B2E;font-family:'Georgia',serif}
-  .week-card-sub{font-family:'Arial',sans-serif;font-size:11px;color:#888;margin-top:4px}
+  .hdr{padding:28px 36px 24px;border-bottom:1px solid #EBEBEB}
+  .hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+  .hdr-logo-row{display:flex;align-items:center;gap:11px}
+  .hdr-company{font-size:10px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase}
+  .hdr-dept{font-size:10px;color:#999;margin-top:2px}
+  .hdr-meta{font-size:10px;color:#999;text-align:right;line-height:1.8}
+  .hdr-title{font-family:'Georgia',serif;font-size:22px;font-weight:700;color:#0D1B2E;letter-spacing:-.3px;margin-bottom:5px}
+  .hdr-sub{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px}
+
+  /* SECTION LABEL */
+  .sec-label{font-size:8px;font-weight:700;color:#003A8F;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #003A8F;display:flex;justify-content:space-between;align-items:center}
+
+  /* KPI GRIDS */
+  .kpi-outer{padding:20px 36px;background:#F9F9F9;border-bottom:1px solid #EBEBEB}
+  .kpi-grid-3{display:table;width:100%;border:1px solid #E2E2E2;border-collapse:collapse}
+  .kpi-cell{display:table-cell;padding:16px 14px;text-align:center;border-right:1px solid #E2E2E2;vertical-align:middle}
+  .kpi-cell:last-child{border-right:none}
+  .kpi-val{font-family:'Georgia',serif;font-size:30px;font-weight:700;color:#0D1B2E;line-height:1}
+  .kpi-val.navy{color:#003A8F}
+  .kpi-val.green{color:#2D7D2D}
+  .kpi-val.purple{color:#6D28D9}
+  .kpi-lbl{font-size:8px;color:#999;text-transform:uppercase;letter-spacing:.8px;margin-top:7px;font-weight:600}
+
+  /* BODY SECTIONS */
+  .body{padding:24px 36px}
+  .section{margin-bottom:26px}
+
+  /* TABLES */
+  table.data{width:100%;border-collapse:collapse;font-size:11px}
+  table.data th{background:#0D1B2E;color:#fff;padding:8px 12px;text-align:left;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  table.data th.r{text-align:right}
+  table.data td{padding:9px 12px;border-bottom:1px solid #F2F2F2;color:#333;vertical-align:middle}
+  table.data td.r{text-align:right;font-weight:600;color:#0D1B2E}
+  table.data tr:last-child td{border-bottom:none}
+  table.data tr.total td{background:#F5F5F5;font-weight:700;color:#0D1B2E}
+
+  /* THERAPY BADGE */
+  .badge-onco{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;letter-spacing:.4px;text-transform:uppercase;background:#EEF2FF;color:#003A8F;border:1px solid #C7D2FE}
+  .badge-opth{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;letter-spacing:.4px;text-transform:uppercase;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+
+  /* PROGRESS BARS */
+  .prog-wrap{margin-bottom:14px}
+  .prog-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .prog-label{font-size:11px;font-weight:700;color:#0D1B2E}
+  .prog-frac{font-size:10px;color:#888}
+  .prog-track{height:10px;background:#EBEBEB;overflow:hidden}
+  .prog-fill{height:10px}
+  .prog-footer{display:flex;justify-content:space-between;font-size:9px;color:#888;margin-top:4px}
+
+  /* YOY */
+  .yoy-hdr{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;padding-bottom:6px;border-bottom:2px solid #003A8F;margin-bottom:2px;display:flex;justify-content:space-between}
+  .yoy-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0F0F0;font-size:11px}
+  .yoy-row:last-child{border-bottom:none}
+  .yoy-metric{color:#555;flex:1}
+  .yoy-25{color:#0D1B2E;font-weight:600;width:60px;text-align:center}
+  .yoy-26{color:#003A8F;font-weight:700;width:60px;text-align:center}
+  .yoy-delta{font-size:10px;font-weight:700;width:70px;text-align:right}
+  .yoy-delta.up{color:#166534}
+  .yoy-delta.dn{color:#991B1B}
+
+  /* NEW FEATURE CALLOUT */
+  .callout{background:#0D1B2E;padding:18px 20px;margin-bottom:26px;display:flex;gap:14px;align-items:flex-start}
+  .callout-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+  .callout-title{font-size:11px;font-weight:700;color:#fff;margin-bottom:4px}
+  .callout-body{font-size:10px;color:rgba(255,255,255,.6);line-height:1.6}
+  .callout-pill{display:inline-block;font-size:8px;font-weight:700;padding:2px 8px;background:rgba(120,190,32,.2);color:#A3E635;letter-spacing:.5px;text-transform:uppercase;margin-top:7px}
+
   /* STATUS BAR */
-  .status-section{margin-bottom:28px}
-  .status-bar-wrap{background:#F0F0F0;height:8px;border-radius:0;overflow:hidden;margin-bottom:8px}
-  .status-bar{height:8px;background:#003A8F}
-  .status-meta{display:flex;justify-content:space-between;font-family:'Arial',sans-serif;font-size:10px;color:#666}
+  .status-bar-track{height:7px;background:#EBEBEB;overflow:hidden}
+  .status-bar-fill{height:7px;background:#003A8F}
+  .status-meta{display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:5px}
   .status-meta strong{color:#0D1B2E}
+
   /* CTA */
-  .cta-section{background:#0D1B2E;padding:24px 40px;text-align:center}
-  .cta-title{font-family:'Arial',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:14px}
-  .cta-btn{display:inline-block;background:#003A8F;color:#fff;padding:12px 36px;text-decoration:none;font-family:'Arial',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(255,255,255,.2)}
-  .cta-pass{margin-top:12px;font-family:'Arial',sans-serif;font-size:10px;color:rgba(255,255,255,.4)}
-  .cta-pass strong{color:rgba(255,255,255,.7)}
+  .cta{background:#0D1B2E;padding:22px 36px;text-align:center}
+  .cta-label{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:12px}
+  .cta-btn{display:inline-block;background:#003A8F;color:#fff;padding:11px 34px;text-decoration:none;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(255,255,255,.15)}
+  .cta-pass{margin-top:10px;font-size:9px;color:rgba(255,255,255,.35)}
+  .cta-pass strong{color:rgba(255,255,255,.65)}
+
   /* FOOTER */
-  .footer{padding:16px 40px;border-top:1px solid #E5E5E5;display:flex;justify-content:space-between;align-items:center}
-  .footer-left{font-family:'Arial',sans-serif;font-size:9px;color:#aaa;letter-spacing:.5px;text-transform:uppercase;line-height:1.8}
-  .footer-right{font-family:'Arial',sans-serif;font-size:9px;color:#aaa;text-align:right;line-height:1.8}
+  .footer{padding:14px 36px;border-top:1px solid #EBEBEB;display:flex;justify-content:space-between;align-items:center}
+  .footer-l{font-size:8px;color:#bbb;letter-spacing:.4px;text-transform:uppercase;line-height:1.8}
+  .footer-r{font-size:8px;color:#bbb;text-align:right;line-height:1.8}
 </style>
 </head>
 <body>
@@ -71,7 +102,7 @@
   <div class="hdr">
     <div class="hdr-top">
       <div class="hdr-logo-row">
-        <svg class="hdr-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
               <stop offset="0%" stop-color="#69BE28"/>
@@ -81,169 +112,288 @@
           </defs>
           <circle cx="100" cy="100" r="99" fill="url(#g)"/>
           <circle cx="100" cy="100" r="82" fill="white"/>
-          <text x="100" y="43" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">B</text>
-          <text x="100" y="75" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">A</text>
+          <text x="100" y="43"  text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">B</text>
+          <text x="100" y="75"  text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">A</text>
           <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A" letter-spacing="2">BAYER</text>
           <text x="100" y="125" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">E</text>
           <text x="100" y="157" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="32" fill="#1C3D5A">R</text>
         </svg>
         <div>
           <div class="hdr-company">Bayer India</div>
-          <div style="font-family:Arial,sans-serif;font-size:10px;color:#999;margin-top:2px">Medical Affairs · CME Analytics</div>
+          <div class="hdr-dept">Medical Affairs · CME Analytics</div>
         </div>
       </div>
       <div class="hdr-meta">
         Weekly Briefing<br/>
-        Monday, 19 May 2025<br/>
+        Monday, 26 May 2026<br/>
         <span style="color:#003A8F;font-weight:700">CONFIDENTIAL</span>
       </div>
     </div>
     <div class="hdr-title">Webinar Performance Report</div>
-    <div class="hdr-sub">February 2025 – May 2026 · All Therapy Areas</div>
+    <div class="hdr-sub">February 2025 – May 2026 · Oncology &amp; Ophthalmology</div>
   </div>
 
-  <!-- EXECUTIVE SUMMARY -->
-  <div class="exec">
-    <div class="exec-label">Programme Total · All Time</div>
-    <div class="exec-grid">
-      <div class="exec-kpi">
-        <div class="exec-val blue">194</div>
-        <div class="exec-lbl">Total Webinars</div>
+  <!-- ALL-TIME KPIs -->
+  <div class="kpi-outer">
+    <div class="sec-label">Programme Total · All Time</div>
+    <div class="kpi-grid-3">
+      <div class="kpi-cell">
+        <div class="kpi-val navy">194</div>
+        <div class="kpi-lbl">Total Webinars</div>
       </div>
-      <div class="exec-kpi">
-        <div class="exec-val green">8,742</div>
-        <div class="exec-lbl">Total Attendees</div>
+      <div class="kpi-cell">
+        <div class="kpi-val green">8,253</div>
+        <div class="kpi-lbl">Total Attendees</div>
       </div>
-      <div class="exec-kpi">
-        <div class="exec-val">48.3</div>
-        <div class="exec-lbl">Avg Attendees</div>
+      <div class="kpi-cell">
+        <div class="kpi-val">42.5</div>
+        <div class="kpi-lbl">Avg Attendees</div>
       </div>
     </div>
   </div>
 
-  <!-- 2026 SUMMARY -->
-  <div class="exec" style="background:#F0F4FF;border-bottom:1px solid #E5E5E5">
-    <div class="exec-label" style="color:#003A8F">2026 Year-to-Date</div>
-    <div class="exec-grid">
-      <div class="exec-kpi">
-        <div class="exec-val blue">55</div>
-        <div class="exec-lbl">2026 Webinars</div>
+  <!-- 2026 YTD KPIs -->
+  <div class="kpi-outer" style="background:#F0F4FF">
+    <div class="sec-label">2026 Year-to-Date · January – April</div>
+    <div class="kpi-grid-3">
+      <div class="kpi-cell">
+        <div class="kpi-val navy">55</div>
+        <div class="kpi-lbl">2026 Webinars</div>
       </div>
-      <div class="exec-kpi">
-        <div class="exec-val" style="color:#6B21A8">2,184</div>
-        <div class="exec-lbl">2026 Attendees</div>
+      <div class="kpi-cell">
+        <div class="kpi-val purple">1,957</div>
+        <div class="kpi-lbl">2026 Attendees</div>
       </div>
-      <div class="exec-kpi">
-        <div class="exec-val">39.7</div>
-        <div class="exec-lbl">Avg per Session</div>
+      <div class="kpi-cell">
+        <div class="kpi-val">35.6</div>
+        <div class="kpi-lbl">Avg per Session</div>
       </div>
     </div>
   </div>
 
-  <!-- BODY -->
   <div class="body">
 
-    <!-- THERAPY BREAKDOWN -->
+    <!-- YEAR VS YEAR -->
     <div class="section">
-      <div class="section-title">
-        Therapy Area Performance
-        <span style="font-size:9px;font-weight:400;color:#999;letter-spacing:0;text-transform:none">vs. programme total</span>
+      <div class="sec-label">Year vs Year · Jan – Apr (Same Period Comparison)</div>
+      <div class="yoy-hdr">
+        <span style="flex:1">Metric</span>
+        <span style="width:60px;text-align:center">2025</span>
+        <span style="width:60px;text-align:center;color:#003A8F">2026</span>
+        <span style="width:70px;text-align:right">Change</span>
       </div>
-      <table>
+      <div class="yoy-row">
+        <div class="yoy-metric">Webinars Conducted</div>
+        <div class="yoy-25">22</div>
+        <div class="yoy-26">55</div>
+        <div class="yoy-delta up">+33 &nbsp;▲150%</div>
+      </div>
+      <div class="yoy-row">
+        <div class="yoy-metric">Total Attendees</div>
+        <div class="yoy-25">1,282</div>
+        <div class="yoy-26">1,957</div>
+        <div class="yoy-delta up">+675 &nbsp;▲53%</div>
+      </div>
+      <div class="yoy-row">
+        <div class="yoy-metric">Avg Attendees / Session</div>
+        <div class="yoy-25">58.3</div>
+        <div class="yoy-26">35.6</div>
+        <div class="yoy-delta dn">−22.7 &nbsp;▼39%</div>
+      </div>
+      <div class="yoy-row">
+        <div class="yoy-metric">Oncology Sessions</div>
+        <div class="yoy-25">13</div>
+        <div class="yoy-26">36</div>
+        <div class="yoy-delta up">+23 &nbsp;▲177%</div>
+      </div>
+      <div class="yoy-row">
+        <div class="yoy-metric">Ophthalmology Sessions</div>
+        <div class="yoy-25">9</div>
+        <div class="yoy-26">19</div>
+        <div class="yoy-delta up">+10 &nbsp;▲111%</div>
+      </div>
+    </div>
+
+    <!-- THERAPY BREAKDOWN ALL TIME -->
+    <div class="section">
+      <div class="sec-label">Therapy Area Performance · All Time</div>
+      <table class="data">
         <thead>
           <tr>
-            <th>Therapy Area</th>
-            <th class="right">Webinars</th>
-            <th class="right">Attendees</th>
-            <th class="right">Avg / Session</th>
-            <th class="right">Share</th>
+            <th>Therapy</th>
+            <th class="r">Webinars</th>
+            <th class="r">Attendees</th>
+            <th class="r">Avg / Session</th>
+            <th class="r">Share</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><span class="therapy-badge badge-onco">Oncology</span></td>
-            <td class="right">118</td>
-            <td class="right">5,412</td>
-            <td class="right">45.9</td>
-            <td class="right">61%</td>
+            <td><span class="badge-onco">Oncology</span></td>
+            <td class="r">110</td>
+            <td class="r">—</td>
+            <td class="r">—</td>
+            <td class="r">57%</td>
           </tr>
           <tr>
-            <td><span class="therapy-badge badge-opth">Ophthal</span></td>
-            <td class="right">76</td>
-            <td class="right">3,330</td>
-            <td class="right">43.8</td>
-            <td class="right">39%</td>
+            <td><span class="badge-opth">Ophthalmology</span></td>
+            <td class="r">84</td>
+            <td class="r">—</td>
+            <td class="r">—</td>
+            <td class="r">43%</td>
           </tr>
-          <tr style="background:#F9F9F9">
-            <td style="font-weight:700;color:#0D1B2E;font-size:11px">TOTAL</td>
-            <td class="right" style="font-weight:700;color:#0D1B2E">194</td>
-            <td class="right" style="font-weight:700;color:#0D1B2E">8,742</td>
-            <td class="right" style="font-weight:700;color:#0D1B2E">48.3</td>
-            <td class="right" style="font-weight:700;color:#0D1B2E">100%</td>
+          <tr class="total">
+            <td>Total</td>
+            <td class="r">194</td>
+            <td class="r">8,253</td>
+            <td class="r">42.5</td>
+            <td class="r">100%</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- THIS WEEK -->
+    <!-- THERAPY BREAKDOWN 2026 -->
     <div class="section">
-      <div class="section-title">This Week's Update <span style="font-size:9px;font-weight:400;color:#999;letter-spacing:0;text-transform:none">12 May – 19 May 2025</span></div>
-      <div class="week-row">
-        <div class="week-card">
-          <div class="week-card-label">New Webinars</div>
-          <div class="week-card-val">4</div>
-          <div class="week-card-sub" style="color:#166534;font-weight:600">↑ +1 vs prior week (3)</div>
+      <div class="sec-label">Therapy Area Performance · 2026 YTD</div>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Therapy</th>
+            <th class="r">Webinars</th>
+            <th class="r">Attendees</th>
+            <th class="r">Avg / Session</th>
+            <th class="r">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge-onco">Oncology</span></td>
+            <td class="r">36</td>
+            <td class="r">—</td>
+            <td class="r">—</td>
+            <td class="r">65%</td>
+          </tr>
+          <tr>
+            <td><span class="badge-opth">Ophthalmology</span></td>
+            <td class="r">19</td>
+            <td class="r">—</td>
+            <td class="r">—</td>
+            <td class="r">35%</td>
+          </tr>
+          <tr class="total">
+            <td>Total</td>
+            <td class="r">55</td>
+            <td class="r">1,957</td>
+            <td class="r">35.6</td>
+            <td class="r">100%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2026 TARGET TRACKER -->
+    <div class="section">
+      <div class="sec-label">
+        2026 Annual Target Tracker
+        <span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:9px;color:#999">Target: 200 webinars per therapy · 7 months remaining</span>
+      </div>
+
+      <div class="prog-wrap">
+        <div class="prog-header">
+          <div class="prog-label"><span class="badge-onco">Oncology</span> &nbsp; 36 of 200</div>
+          <div class="prog-frac">18% complete</div>
         </div>
-        <div class="week-card">
-          <div class="week-card-label">Attendees This Week</div>
-          <div class="week-card-val">187</div>
-          <div class="week-card-sub" style="color:#991B1B;font-weight:600">↓ −24 vs prior week (211)</div>
+        <div class="prog-track">
+          <div class="prog-fill" style="width:18%;background:#003A8F"></div>
+        </div>
+        <div class="prog-footer">
+          <span>Current avg: <strong style="color:#0D1B2E">9.0 / month</strong></span>
+          <span>Required avg to target: <strong style="color:#DC2626">23.4 / month</strong></span>
         </div>
       </div>
-      <div class="week-row" style="margin-bottom:0">
-        <div class="week-card">
-          <div class="week-card-label">Top Month Overall</div>
-          <div class="week-card-val" style="font-size:22px">September</div>
-          <div class="week-card-sub">22 webinars · highest volume</div>
+
+      <div class="prog-wrap" style="margin-top:6px">
+        <div class="prog-header">
+          <div class="prog-label"><span class="badge-opth">Ophthalmology</span> &nbsp; 19 of 200</div>
+          <div class="prog-frac">10% complete</div>
         </div>
-        <div class="week-card">
-          <div class="week-card-label">Avg Attendance This Week</div>
-          <div class="week-card-val" style="font-size:22px">46.8</div>
-          <div class="week-card-sub">per webinar · 7-day window</div>
+        <div class="prog-track">
+          <div class="prog-fill" style="width:10%;background:#78BE20"></div>
         </div>
+        <div class="prog-footer">
+          <span>Current avg: <strong style="color:#0D1B2E">4.8 / month</strong></span>
+          <span>Required avg to target: <strong style="color:#DC2626">25.9 / month</strong></span>
+        </div>
+      </div>
+
+      <div style="background:#FEF3C7;border-left:3px solid #D97706;padding:10px 14px;font-size:10px;color:#92400E;line-height:1.6;margin-top:10px">
+        <strong>Attention:</strong> Both therapy areas are behind pace. To hit 200 webinars by December, Oncology needs ~23 sessions/month and Ophthalmology ~26 sessions/month for the remaining 7 months.
       </div>
     </div>
 
-    <!-- REPORTING STATUS -->
+    <!-- 2026 MONTHLY CADENCE -->
     <div class="section">
-      <div class="section-title">Reporting Compliance</div>
-      <div class="status-section">
-        <div class="status-bar-wrap">
-          <div class="status-bar" style="width:82%"></div>
+      <div class="sec-label">2026 Monthly Cadence</div>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="r">Oncology</th>
+            <th class="r">Ophthalmology</th>
+            <th class="r">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>January 2026</td>  <td class="r">5</td>  <td class="r">3</td>  <td class="r">8</td></tr>
+          <tr><td>February 2026</td> <td class="r">18</td> <td class="r">10</td> <td class="r">28</td></tr>
+          <tr><td>March 2026</td>    <td class="r">12</td> <td class="r">6</td>  <td class="r">18</td></tr>
+          <tr><td>April 2026</td>    <td class="r">1</td>  <td class="r">0</td>  <td class="r">1</td></tr>
+          <tr class="total"><td>YTD Total</td><td class="r">36</td><td class="r">19</td><td class="r">55</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SPEAKER INTELLIGENCE CALLOUT -->
+    <div class="callout">
+      <div class="callout-icon">🎤</div>
+      <div>
+        <div class="callout-title">Speaker Intelligence — Now Live on Dashboard</div>
+        <div class="callout-body">
+          The dashboard now includes a dedicated <strong style="color:#fff">Speaker Intelligence</strong> tab tracking KOL engagement across all sessions. Metrics include total unique speakers, ISP vs NSP split, repeat engagements, therapy-wise KOL mix, and a monthly engagement trend chart. To activate: add speaker names to the KOL column in your Google Sheet.
         </div>
-        <div class="status-meta">
-          <span><strong>159 reported</strong> · 82% compliance rate</span>
-          <span><strong>35 pending</strong> · action required</span>
-        </div>
+        <div class="callout-pill">New Feature</div>
+      </div>
+    </div>
+
+    <!-- REPORTING COMPLIANCE -->
+    <div class="section">
+      <div class="sec-label">Reporting Compliance · All Time</div>
+      <div class="status-bar-track">
+        <div class="status-bar-fill" style="width:82%"></div>
+      </div>
+      <div class="status-meta">
+        <span><strong>159 reported</strong> &nbsp;· 82% compliance</span>
+        <span><strong>35 pending</strong> &nbsp;· action required</span>
       </div>
     </div>
 
   </div>
 
   <!-- CTA -->
-  <div class="cta-section">
-    <div class="cta-title">Access Live Dashboard</div>
+  <div class="cta">
+    <div class="cta-label">Access Live Dashboard</div>
     <a href="https://bayer-dashboard.onrender.com" class="cta-btn">Open Dashboard →</a>
     <div class="cta-pass">Password: <strong>BayerUser</strong></div>
   </div>
 
   <!-- FOOTER -->
   <div class="footer">
-    <div class="footer-left">
+    <div class="footer-l">
       Automated Weekly Report<br/>
       Generated every Monday · 08:00 IST
     </div>
-    <div class="footer-right">
+    <div class="footer-r">
       Strictly Confidential<br/>
       Bayer AG · Internal Use Only
     </div>
