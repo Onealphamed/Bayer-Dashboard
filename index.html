@@ -243,6 +243,14 @@ tr:hover td{background:#FAFBFE}
 }
 /* ── TARGET TRACKER ───────────────────────────────────────────── */
 .target-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:20px}
+.target-month-block{grid-column:1/-1;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:20px 28px}
+.target-month-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
+.target-month-stats{display:flex;align-items:center;gap:0}
+.target-month-stat{flex:1;text-align:center;padding:8px 12px}
+.target-month-val{font-size:36px;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px}
+.target-month-lbl{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.target-month-lbl span{font-size:10px;font-weight:400;color:var(--muted)}
+.target-month-divider{width:1px;background:var(--border);height:60px;flex-shrink:0}
 .target-card{background:var(--card);border-radius:var(--radius);padding:26px 28px;border:1px solid var(--border);box-shadow:var(--shadow);transition:box-shadow .2s}
 .target-card:hover{box-shadow:var(--shadow-hover)}
 .target-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
@@ -1221,8 +1229,52 @@ function renderTargets() {
   const ophthCount      = RAW_DATA.filter(x => getYear(x) === 2026 && x.therapy === 'Opthal').length;
   const el              = document.getElementById('targetGrid');
   if (!el) return;
+
+  // Current month name (e.g. "May")
+  const curMonthName = now.toLocaleString('en-US', { month: 'long' });
+
+  // May 2025 count — match month name case-insensitively
+  const may2025 = RAW_DATA.filter(x =>
+    getYear(x) === 2025 &&
+    (x.month || '').toLowerCase() === curMonthName.toLowerCase()
+  ).length;
+
+  // Current month 2026 count
+  const curMonth2026 = RAW_DATA.filter(x =>
+    getYear(x) === 2026 &&
+    (x.month || '').toLowerCase() === curMonthName.toLowerCase()
+  ).length;
+
+  // Expected for current month = remaining target ÷ remaining months (both therapies combined)
+  const totalRemaining  = Math.max((200 - oncoCount) + (200 - ophthCount), 0);
+  const expectedPerMonth = monthsRemaining > 0
+    ? Math.ceil(totalRemaining / monthsRemaining)
+    : '—';
+
+  const monthMiniCard = `
+  <div class="target-month-block">
+    <div class="target-month-title">📅 ${curMonthName} Snapshot</div>
+    <div class="target-month-stats">
+      <div class="target-month-stat">
+        <div class="target-month-val">${may2025}</div>
+        <div class="target-month-lbl">${curMonthName} 2025<br/><span>Last Year</span></div>
+      </div>
+      <div class="target-month-divider"></div>
+      <div class="target-month-stat">
+        <div class="target-month-val" style="color:var(--blue)">${curMonth2026}</div>
+        <div class="target-month-lbl">${curMonthName} 2026<br/><span>This Month</span></div>
+      </div>
+      <div class="target-month-divider"></div>
+      <div class="target-month-stat">
+        <div class="target-month-val" style="color:var(--green)">${expectedPerMonth}</div>
+        <div class="target-month-lbl">Expected<br/><span>Monthly Needed</span></div>
+      </div>
+    </div>
+  </div>`;
+
   el.innerHTML = targetCardHTML('Oncology', '🔬', COLORS.onco, oncoCount, monthsElapsed, monthsRemaining)
-               + targetCardHTML('Ophthalmology', '👁', COLORS.opthal, ophthCount, monthsElapsed, monthsRemaining);
+               + targetCardHTML('Ophthalmology', '👁', COLORS.opthal, ophthCount, monthsElapsed, monthsRemaining)
+               + monthMiniCard;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
