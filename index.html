@@ -426,7 +426,7 @@ html.dark .pw-divider{background:var(--blue)}
     <div class="header-logo">B</div>
     <div>
       <div class="header-title">Bayer Webinar Dashboard</div>
-      <div class="header-sub">CME Tracker · Feb 2025 – Mar 2026</div>
+      <div class="header-sub" id="headerSub">CME Tracker · Loading…</div>
     </div>
   </div>
   <div class="header-right">
@@ -910,13 +910,27 @@ function parseDateLoose(str) {
   return null;
 }
 
-// Returns months sorted by their earliest date within the given dataset
+const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Normalise any month string to full name: "feb" / "FEB" / "February" → "February"
+function normalizeMonth(raw) {
+  if (!raw) return '';
+  const s = raw.toString().trim().toLowerCase().slice(0, 3);
+  return MONTH_FULL.find(m => m.toLowerCase().startsWith(s)) || raw.trim();
+}
+
+// Returns months sorted by their earliest date within the given dataset.
+// Months whose dates can't be parsed are still included, sorted by calendar order.
 function getSortedMonths(data) {
   const earliest = {};
   data.forEach(d => {
     if (!d.month) return;
+    const mn = normalizeMonth(d.month);
     const dt = parseDateLoose(d.date);
-    if (dt && (!earliest[d.month] || dt < earliest[d.month])) earliest[d.month] = dt;
+    if (!earliest[mn] || (dt && dt < earliest[mn])) {
+      // Use parsed date if available; fallback to a synthetic date by calendar order
+      earliest[mn] = dt || new Date(2000, MONTH_FULL.indexOf(mn), 1);
+    }
   });
   return Object.keys(earliest).sort((a, b) => earliest[a] - earliest[b]);
 }
@@ -948,7 +962,7 @@ let sparkCharts     = {};
 // HELPERS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const filt = data => data.filter(d =>
-  (activeMonths.size === 0 || activeMonths.has(d.month)) &&
+  (activeMonths.size === 0 || activeMonths.has(normalizeMonth(d.month))) &&
   (activeYears.size  === 0 || activeYears.has(getYear(d))) &&
   (activeTherapies.size === 0 || activeTherapies.has(d.therapy))
 );
@@ -1143,8 +1157,23 @@ function switchTab(tab, btn) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // REFRESH
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateHeaderSub() {
+  const allMonths = getSortedMonths(RAW_DATA);
+  if (allMonths.length < 2) return;
+  const first = allMonths[0];
+  const last  = allMonths[allMonths.length - 1];
+  // Find year of first and last month
+  const firstRec = RAW_DATA.find(d => normalizeMonth(d.month) === first);
+  const lastRec  = RAW_DATA.slice().reverse().find(d => normalizeMonth(d.month) === last);
+  const fy = firstRec ? (getYear(firstRec) || '') : '';
+  const ly = lastRec  ? (getYear(lastRec)  || '') : '';
+  const sub = document.getElementById('headerSub');
+  if (sub) sub.textContent = `CME Tracker · ${first.slice(0,3)} ${fy} – ${last.slice(0,3)} ${ly}`;
+}
+
 function refresh() {
   currentData = filt(RAW_DATA);
+  updateHeaderSub();
   renderKPIs();
   renderTargets();
   renderCharts();
@@ -2002,7 +2031,7 @@ function applySheetData(rows) {
       id: i + 1,
       therapy:    r[iT].toString().trim(),
       event:      (r[iE] || '').toString().trim(),
-      month:      (r[iM] || '').toString().trim(),
+      month:      normalizeMonth((r[iM] || '').toString().trim()),
       date:       (r[iD] || '').toString().trim(),
       type:       (r[iY] || 'NSP').toString().trim() || 'NSP',
       attendees:  r[iA] ? parseInt(r[iA]) || null : null,
