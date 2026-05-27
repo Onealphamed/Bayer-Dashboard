@@ -1158,15 +1158,20 @@ function switchTab(tab, btn) {
 // REFRESH
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function updateHeaderSub() {
-  const allMonths = getSortedMonths(RAW_DATA);
-  if (allMonths.length < 2) return;
-  const first = allMonths[0];
-  const last  = allMonths[allMonths.length - 1];
-  // Find year of first and last month
-  const firstRec = RAW_DATA.find(d => normalizeMonth(d.month) === first);
-  const lastRec  = RAW_DATA.slice().reverse().find(d => normalizeMonth(d.month) === last);
-  const fy = firstRec ? (getYear(firstRec) || '') : '';
-  const ly = lastRec  ? (getYear(lastRec)  || '') : '';
+  if (!RAW_DATA.length) return;
+  // Find actual earliest and latest records by parsed date
+  let firstRec = null, lastRec = null, firstDt = null, lastDt = null;
+  RAW_DATA.forEach(d => {
+    const dt = parseDateLoose(d.date);
+    if (!dt) return;
+    if (!firstDt || dt < firstDt) { firstDt = dt; firstRec = d; }
+    if (!lastDt  || dt > lastDt)  { lastDt  = dt; lastRec  = d; }
+  });
+  if (!firstRec || !lastRec) return;
+  const first = normalizeMonth(firstRec.month);
+  const last  = normalizeMonth(lastRec.month);
+  const fy = getYear(firstRec) || '';
+  const ly = getYear(lastRec)  || '';
   const sub = document.getElementById('headerSub');
   if (sub) sub.textContent = `CME Tracker · ${first.slice(0,3)} ${fy} – ${last.slice(0,3)} ${ly}`;
 }
