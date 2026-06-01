@@ -87,6 +87,36 @@ html.dark .kol-therapy-row{background:var(--bg)}
 html.dark .kol-isp-card{background:linear-gradient(135deg,#0a1220 0%,#002060 100%)}
 @media(max-width:900px){.kol-stat-grid{grid-template-columns:1fr 1fr}.kol-two-col,.kol-three-col{grid-template-columns:1fr}}
 
+/* ── SPEAKER GALLERY TAB ──────────────────────────────────────── */
+.gallery-search-bar{padding:20px 32px 0;display:flex;gap:10px;align-items:center}
+.gallery-search-wrap{position:relative;flex:1;max-width:460px}
+.gallery-search-wrap input{width:100%;padding:10px 16px 10px 40px;border:1.5px solid var(--border);border-radius:24px;font-size:13px;background:var(--card);color:var(--text);outline:none;transition:border-color .2s}
+.gallery-search-wrap input:focus{border-color:var(--blue)}
+.gallery-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none}
+.gallery-search-clear{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;cursor:pointer;display:none}
+.gallery-section{padding:24px 32px 0}
+.gallery-section-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.gallery-section-title{font-size:15px;font-weight:700;color:var(--text)}
+.gallery-section-count{font-size:11px;font-weight:600;background:var(--blue-pale);color:var(--blue);padding:3px 10px;border-radius:20px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px;margin-bottom:32px}
+.spk-card{background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s,transform .15s;display:flex;flex-direction:column}
+.spk-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-3px)}
+.spk-photo-wrap{background:linear-gradient(160deg,#e8effc 0%,#f0f7e8 100%);padding:24px 0 0;display:flex;justify-content:center;position:relative}
+.spk-photo-wrap.onco{background:linear-gradient(160deg,#dbeafe 0%,#eff6ff 100%)}
+.spk-photo-wrap.opthal{background:linear-gradient(160deg,#dcfce7 0%,#f0fdf4 100%)}
+.spk-avatar{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.15);display:block}
+.spk-sessions-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:10px}
+.spk-body{background:linear-gradient(135deg,#003A8F,#0050C8);padding:12px 10px 14px;text-align:center;flex:1;display:flex;flex-direction:column;gap:3px}
+.spk-body.opthal{background:linear-gradient(135deg,#2D7D2D,#78BE20)}
+.spk-role{font-size:8px;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.8px}
+.spk-name{font-size:12px;font-weight:700;color:#fff;line-height:1.3}
+.spk-meta{font-size:9px;color:rgba(255,255,255,.55);margin-top:2px}
+.gallery-show-more{display:block;margin:0 auto 28px;background:none;border:1.5px solid var(--blue);color:var(--blue);padding:8px 28px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.gallery-show-more:hover{background:var(--blue);color:#fff}
+.gallery-no-results{text-align:center;padding:48px 20px;color:var(--muted);font-size:14px}
+html.dark .spk-card{background:var(--card);border-color:var(--border)}
+html.dark .gallery-search-wrap input{background:#1A2535;border-color:var(--border);color:var(--text)}
+
 /* ── FILTER BAR ───────────────────────────────────────────────── */
 .filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .filter-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
@@ -446,6 +476,7 @@ html.dark .pw-divider{background:var(--blue)}
 <nav class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('exec',this)">📊 Executive Dashboard</button>
   <button class="tab-btn" onclick="switchTab('kol',this)">🎤 Speaker Intelligence</button>
+  <button class="tab-btn" onclick="switchTab('gallery',this)">🖼 Speaker Gallery</button>
 </nav>
 
 <!-- FILTERS -->
@@ -629,6 +660,53 @@ html.dark .pw-divider{background:var(--blue)}
     </div>
 
   </div><!-- /kol -->
+
+  <!-- TAB 3: SPEAKER GALLERY -->
+  <div class="tab-panel" id="panel-gallery">
+
+    <!-- SEARCH BAR -->
+    <div class="gallery-search-bar">
+      <div class="gallery-search-wrap">
+        <span class="gallery-search-icon">🔍</span>
+        <input type="text" id="gallerySearch" placeholder="Search speaker by name…" oninput="onGallerySearch(this.value)"/>
+        <span class="gallery-search-clear" id="gallerySearchClear" onclick="clearGallerySearch()">✕</span>
+      </div>
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <div id="gallerySearchResults" style="display:none">
+      <div class="gallery-section">
+        <div class="gallery-section-hdr">
+          <div class="gallery-section-title">🔍 Search Results</div>
+          <div class="gallery-section-count" id="galleryResultCount">0 found</div>
+        </div>
+        <div class="gallery-grid" id="galleryResultGrid"></div>
+      </div>
+    </div>
+
+    <!-- ONCOLOGY TOP 10 -->
+    <div id="galleryDefault">
+      <div class="gallery-section">
+        <div class="gallery-section-hdr">
+          <div class="gallery-section-title">🔬 Oncology — Featured Speakers</div>
+          <div class="gallery-section-count" id="galleryOncoCount">Top 10</div>
+        </div>
+        <div class="gallery-grid" id="galleryOncoGrid"></div>
+        <button class="gallery-show-more" id="galleryOncoMore" onclick="showMoreGallery('Onco')" style="display:none">Show More Oncology Speakers</button>
+      </div>
+
+      <!-- OPHTHALMOLOGY TOP 10 -->
+      <div class="gallery-section">
+        <div class="gallery-section-hdr">
+          <div class="gallery-section-title">👁 Ophthalmology — Featured Speakers</div>
+          <div class="gallery-section-count" id="galleryOpthalCount">Top 10</div>
+        </div>
+        <div class="gallery-grid" id="galleryOpthalGrid"></div>
+        <button class="gallery-show-more" id="galleryOpthalMore" onclick="showMoreGallery('Opthal')" style="display:none">Show More Ophthalmology Speakers</button>
+      </div>
+    </div>
+
+  </div><!-- /gallery -->
 
 
 </div><!-- /main -->
@@ -1152,6 +1230,7 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+tab).classList.add('active');
   btn.classList.add('active');
+  if (tab === 'gallery') renderGallery();
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2198,6 +2277,129 @@ function toggleDark() {
   document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
   Chart.defaults.color = isDark ? '#8899B0' : '#64748B';
   refresh();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SPEAKER GALLERY
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let galleryOncoAll  = [];
+let galleryOpthalAll = [];
+let galleryOncoShown  = 10;
+let galleryOpthalShown = 10;
+
+function buildGalleryData() {
+  const map = {};
+  RAW_DATA.forEach(row => {
+    const therapy = row.therapy;
+    const type    = row.type || 'NSP';
+    (row.kols || []).forEach(name => {
+      const key = name.trim().toLowerCase();
+      if (!key) return;
+      if (!map[key]) map[key] = { name: name.trim(), therapy, nsp:0, isp:0, advisory:0, sessions:0 };
+      map[key].sessions++;
+      const tl = type.toLowerCase();
+      if (tl === 'nsp') map[key].nsp++;
+      else if (tl === 'isp') map[key].isp++;
+      else map[key].advisory++;
+    });
+  });
+  const all = Object.values(map).sort((a,b) => b.sessions - a.sessions);
+  galleryOncoAll   = all.filter(k => k.therapy === 'Onco');
+  galleryOpthalAll = all.filter(k => k.therapy === 'Opthal');
+}
+
+function avatarURL(name, therapy) {
+  const bg = therapy === 'Onco' ? '003A8F' : '2D7D2D';
+  const enc = encodeURIComponent(name);
+  return `https://ui-avatars.com/api/?name=${enc}&background=${bg}&color=ffffff&size=200&bold=true&rounded=true`;
+}
+
+function speakerCardHTML(kol) {
+  const isOnco   = kol.therapy === 'Onco';
+  const bodyClass = isOnco ? '' : ' opthal';
+  const wrapClass = isOnco ? 'onco' : 'opthal';
+  const typeTag   = kol.isp > 0 ? `ISP · ${kol.isp}` : kol.nsp > 0 ? `NSP · ${kol.nsp}` : '';
+  const roleLabel = kol.isp > 0 ? 'ISP Speaker' : 'National Speaker';
+  return `<div class="spk-card">
+    <div class="spk-photo-wrap ${wrapClass}">
+      <img class="spk-avatar" src="${avatarURL(kol.name, kol.therapy)}" alt="${kol.name}" loading="lazy"/>
+      <span class="spk-sessions-badge">${kol.sessions} session${kol.sessions>1?'s':''}</span>
+    </div>
+    <div class="spk-body${bodyClass}">
+      <div class="spk-role">${roleLabel}</div>
+      <div class="spk-name">${kol.name}</div>
+      <div class="spk-meta">${typeTag}</div>
+    </div>
+  </div>`;
+}
+
+function renderGallery() {
+  buildGalleryData();
+
+  const oncoGrid  = document.getElementById('galleryOncoGrid');
+  const opthalGrid = document.getElementById('galleryOpthalGrid');
+  const oncoCount  = document.getElementById('galleryOncoCount');
+  const opthalCount = document.getElementById('galleryOpthalCount');
+  const oncoMore   = document.getElementById('galleryOncoMore');
+  const opthalMore = document.getElementById('galleryOpthalMore');
+
+  const oncoSlice   = galleryOncoAll.slice(0, galleryOncoShown);
+  const opthalSlice = galleryOpthalAll.slice(0, galleryOpthalShown);
+
+  oncoGrid.innerHTML   = oncoSlice.map(speakerCardHTML).join('') || '<div class="gallery-no-results">No Oncology speakers found in data</div>';
+  opthalGrid.innerHTML = opthalSlice.map(speakerCardHTML).join('') || '<div class="gallery-no-results">No Ophthalmology speakers found in data</div>';
+
+  oncoCount.textContent   = `${galleryOncoAll.length} total`;
+  opthalCount.textContent = `${galleryOpthalAll.length} total`;
+
+  oncoMore.style.display   = galleryOncoAll.length > galleryOncoShown   ? 'block' : 'none';
+  opthalMore.style.display = galleryOpthalAll.length > galleryOpthalShown ? 'block' : 'none';
+  oncoMore.textContent   = `Show More Oncology Speakers (${galleryOncoAll.length - galleryOncoShown} more)`;
+  opthalMore.textContent = `Show More Ophthalmology Speakers (${galleryOpthalAll.length - galleryOpthalShown} more)`;
+}
+
+function showMoreGallery(therapy) {
+  if (therapy === 'Onco') {
+    galleryOncoShown += 10;
+  } else {
+    galleryOpthalShown += 10;
+  }
+  renderGallery();
+}
+
+let gallerySearchTimer = null;
+function onGallerySearch(val) {
+  const clear = document.getElementById('gallerySearchClear');
+  const defaultView = document.getElementById('galleryDefault');
+  const searchView  = document.getElementById('gallerySearchResults');
+  clear.style.display = val ? 'block' : 'none';
+  clearTimeout(gallerySearchTimer);
+  gallerySearchTimer = setTimeout(() => {
+    if (!val.trim()) {
+      defaultView.style.display = '';
+      searchView.style.display  = 'none';
+      return;
+    }
+    const q = val.trim().toLowerCase();
+    const allKols = [...galleryOncoAll, ...galleryOpthalAll];
+    const results = allKols.filter(k => k.name.toLowerCase().includes(q));
+    const grid  = document.getElementById('galleryResultGrid');
+    const count = document.getElementById('galleryResultCount');
+    grid.innerHTML = results.length
+      ? results.map(speakerCardHTML).join('')
+      : '<div class="gallery-no-results">No speakers found matching "' + val + '"</div>';
+    count.textContent = results.length + ' found';
+    defaultView.style.display = 'none';
+    searchView.style.display  = '';
+  }, 200);
+}
+
+function clearGallerySearch() {
+  const inp = document.getElementById('gallerySearch');
+  inp.value = '';
+  onGallerySearch('');
+  inp.focus();
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
