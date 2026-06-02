@@ -2427,9 +2427,8 @@ function speakerCardHTML(kol) {
   const roleLabel = kol.isp > 0 ? 'ISP Speaker' : 'National Speaker';
   const photo     = kol.photoUrl || avatarURL(kol.name, kol.therapy);
   const sessionTag = `${kol.isp > 0 ? 'ISP' : 'NSP'} · ${kol.sessions} session${kol.sessions>1?'s':''}`;
-  const credFull   = kol.credential || sessionTag;
-  const credShort  = credFull.length > 90 ? credFull.slice(0, 87) + '…' : credFull;
-  return `<div class="spk-card" title="${credFull}">
+  const credText = kol.credential || sessionTag;
+  return `<div class="spk-card">
     <div class="spk-photo-wrap ${wrapClass}">
       <img class="spk-avatar" src="${photo}" alt="${kol.name}" loading="lazy"
            onerror="this.src='${avatarURL(kol.name, kol.therapy)}'"/>
@@ -2438,7 +2437,7 @@ function speakerCardHTML(kol) {
     <div class="spk-body${bodyClass}">
       <div class="spk-role">${roleLabel}</div>
       <div class="spk-name">${kol.name}</div>
-      <div class="spk-cred">${credShort}</div>
+      <div class="spk-cred">${credText}</div>
     </div>
   </div>`;
 }
