@@ -2392,11 +2392,20 @@ function lookupCred(name) {
   return null;
 }
 
-// Fuzzy name match: strip "Dr."/"Dr " prefix, compare first 8 chars
+// Strict name match: require 2+ significant words to match (prevents cross-person false positives)
+// e.g. "Dr Lakshmi Sandhya" must NOT match "Dr Lakshmi Prasanna S" (only 1 word matches)
 function nameMatch(a, b) {
-  const clean = s => s.toLowerCase().replace(/dr\.?\s*/i,'').replace(/\s+/g,' ').trim();
+  const clean = s => s.toLowerCase()
+    .replace(/\bdr\.?\s*/i,'').replace(/\bprof\.?\s*/i,'')
+    .replace(/\s+/g,' ').trim();
   const ca = clean(a), cb = clean(b);
-  return ca.includes(cb.slice(0,8)) || cb.includes(ca.slice(0,8));
+  if (ca === cb) return true;
+  const sig = w => w.length > 1;
+  const wA = ca.split(' ').filter(sig);
+  const wB = cb.split(' ').filter(sig);
+  if (!wA.length || !wB.length) return false;
+  const hits = wA.filter(w => wB.includes(w)).length;
+  return hits >= Math.min(2, Math.min(wA.length, wB.length));
 }
 
 function findPhoto(name) {
