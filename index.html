@@ -2339,10 +2339,6 @@ let galleryOpthalAll = [];
 let galleryOncoShown  = 10;
 let galleryOpthalShown = 10;
 
-// Credentials fetched from Sheet2 — keyed by lowercase name
-const credentialsMap = {};
-const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?gid=967781355&single=true&output=csv';
-
 function parseCSVRows(text) {
   return text.trim().split('\n').map(r => {
     const out = []; let cur = '', inQ = false;
