@@ -2316,7 +2316,7 @@ let galleryOpthalShown = 10;
 
 // Credentials fetched from Sheet2 — keyed by lowercase name
 const credentialsMap = {};
-const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?output=csv&sheet=Sheet2';
+const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?gid=967781355&single=true&output=csv';
 
 function parseCSVRows(text) {
   return text.trim().split('\n').map(r => {
@@ -2427,7 +2427,9 @@ function speakerCardHTML(kol) {
   const roleLabel = kol.isp > 0 ? 'ISP Speaker' : 'National Speaker';
   const photo     = kol.photoUrl || avatarURL(kol.name, kol.therapy);
   const sessionTag = `${kol.isp > 0 ? 'ISP' : 'NSP'} · ${kol.sessions} session${kol.sessions>1?'s':''}`;
-  return `<div class="spk-card">
+  const credFull   = kol.credential || sessionTag;
+  const credShort  = credFull.length > 90 ? credFull.slice(0, 87) + '…' : credFull;
+  return `<div class="spk-card" title="${credFull}">
     <div class="spk-photo-wrap ${wrapClass}">
       <img class="spk-avatar" src="${photo}" alt="${kol.name}" loading="lazy"
            onerror="this.src='${avatarURL(kol.name, kol.therapy)}'"/>
@@ -2436,8 +2438,7 @@ function speakerCardHTML(kol) {
     <div class="spk-body${bodyClass}">
       <div class="spk-role">${roleLabel}</div>
       <div class="spk-name">${kol.name}</div>
-      <div class="spk-cred">${kol.credential || sessionTag}</div>
-      ${kol.hospital ? `<div class="spk-meta">${kol.hospital}</div>` : ''}
+      <div class="spk-cred">${credShort}</div>
     </div>
   </div>`;
 }
