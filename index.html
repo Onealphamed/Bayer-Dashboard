@@ -99,7 +99,8 @@ html.dark .kol-isp-card{background:linear-gradient(135deg,#0a1220 0%,#002060 100
 .gallery-section-title{font-size:15px;font-weight:700;color:var(--text)}
 .gallery-section-count{font-size:11px;font-weight:600;background:var(--blue-pale);color:var(--blue);padding:3px 10px;border-radius:20px}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px;margin-bottom:32px}
-.spk-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s,transform .15s;display:flex;flex-direction:column;text-align:center}
+.spk-card{background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s,transform .15s;display:flex;flex-direction:column;text-align:center}
+.spk-photo-wrap{border-radius:16px 16px 0 0;overflow:hidden}
 .spk-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-3px)}
 .spk-photo-wrap{background:linear-gradient(160deg,#e8effc 0%,#f0f7e8 100%);padding:28px 0 0;display:flex;justify-content:center;position:relative}
 .spk-photo-wrap.onco{background:linear-gradient(160deg,#dbeafe 0%,#eff6ff 100%)}
@@ -2443,20 +2444,36 @@ function speakerCardHTML(kol) {
 }
 
 function buildGalleryData() {
-  const map = {};
+  const map = {};  // canonical-key → entry
+
+  // Find existing map entry by fuzzy name match
+  function findEntry(name) {
+    for (const k in map) {
+      if (nameMatch(name, map[k].name)) return k;
+    }
+    return null;
+  }
+
   RAW_DATA.forEach(row => {
     (row.kols || []).forEach(name => {
-      const key = name.trim().toLowerCase();
-      if (!key) return;
-      if (!map[key]) {
-        const cred = lookupCred(name.trim());
-        map[key] = { name: name.trim(), therapy: row.therapy, nsp:0, isp:0, sessions:0, photoUrl: null,
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const existing = findEntry(trimmed);
+      if (existing) {
+        // Merge into existing entry — same person, different name spelling
+        map[existing].sessions++;
+        const tl = (row.type||'').toLowerCase();
+        if (tl==='nsp') map[existing].nsp++; else if (tl==='isp') map[existing].isp++;
+      } else {
+        const key  = trimmed.toLowerCase();
+        const cred = lookupCred(trimmed);
+        map[key] = { name: trimmed, therapy: row.therapy, nsp:0, isp:0, sessions:0, photoUrl: null,
           credential: cred ? cred.credential : '',
           hospital:   cred ? cred.hospital   : '' };
+        map[key].sessions++;
+        const tl = (row.type||'').toLowerCase();
+        if (tl==='nsp') map[key].nsp++; else if (tl==='isp') map[key].isp++;
       }
-      map[key].sessions++;
-      const tl = (row.type||'').toLowerCase();
-      if (tl==='nsp') map[key].nsp++; else if (tl==='isp') map[key].isp++;
     });
   });
   // Attach Drive photos
