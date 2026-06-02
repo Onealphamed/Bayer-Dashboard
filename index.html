@@ -2333,52 +2333,52 @@ function parseCSVRows(text) {
 }
 
 async function fetchCredentials() {
-  // Try Sheet2, then sheet named Speakers, then gid=1
-  const urls = [
-    SHEET2_URL,
-    SHEET2_URL.replace('sheet=Sheet2','sheet=Speakers'),
-    SHEET2_URL.replace('sheet=Sheet2','sheet=KOL'),
-    SHEET2_URL.replace('sheet=Sheet2','gid=1'),
-  ];
-  for (const url of urls) {
+  let csvText = null;
+
+  // Try direct fetch first, then CORS proxy fallback
+  try {
+    const res = await fetch(SHEET2_URL, { cache: 'no-store' });
+    if (res.ok) csvText = await res.text();
+  } catch(e) { console.warn('Cred direct fetch failed:', e.message); }
+
+  if (!csvText) {
     try {
-      const res  = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) continue;
-      const text = await res.text();
-      const rows = parseCSVRows(text);
-      if (rows.length < 2) continue;
-      const hdr = rows[0].map(h => h.toLowerCase().trim());
-
-      // Need at least a name column and one of: credential/designation/hospital
-      const iN = hdr.findIndex(h => h.includes('name') || h.includes('doctor') || h.includes('kol'));
-      const iC = hdr.findIndex(h =>
-        h.includes('credential') || h.includes('qualif') || h.includes('degree') ||
-        h.includes('desig') || h.includes('speciali') || h.includes('title'));
-      const iH = hdr.findIndex(h =>
-        h.includes('hospital') || h.includes('institute') || h.includes('affil') ||
-        h.includes('college') || h.includes('centre') || h.includes('center'));
-      const iT = hdr.findIndex(h => h.includes('therapy') || h.includes('dept') || h.includes('area'));
-
-      // Skip if this looks like the main webinar sheet (has "event" column)
-      const hasEvent = hdr.some(h => h.includes('event') || h.includes('webinar'));
-      if (hasEvent && iC < 0) continue;
-      if (iN < 0 && iC < 0) continue;
-
-      const nameCol = iN >= 0 ? iN : 0;
-      let found = 0;
-      rows.slice(1).forEach(row => {
-        const name = (row[nameCol] || '').trim();
-        if (!name || name.match(/^\d+$/)) return; // skip blank or number-only rows
-        credentialsMap[name.toLowerCase()] = {
-          credential: iC >= 0 ? (row[iC] || '').trim() : '',
-          hospital:   iH >= 0 ? (row[iH] || '').trim() : '',
-          therapy:    iT >= 0 ? (row[iT] || '').trim() : '',
-        };
-        found++;
-      });
-      if (found > 0) { renderGallery(); return; } // success — stop trying URLs
-    } catch(e) { /* try next URL */ }
+      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET2_URL)}`;
+      const res   = await fetch(proxy, { cache: 'no-store' });
+      if (res.ok) { const j = await res.json(); csvText = j.contents; }
+    } catch(e) { console.warn('Cred proxy fetch failed:', e.message); }
   }
+
+  if (!csvText) { console.warn('Could not load credentials sheet'); return; }
+
+  const rows = parseCSVRows(csvText);
+  if (rows.length < 2) return;
+
+  const hdr  = rows[0].map(h => h.toLowerCase().trim());
+  console.log('Credentials sheet headers:', hdr);
+
+  // Column: Sr.No | Name of the KOL | Credentials
+  const iN = hdr.findIndex(h => h.includes('name') || h.includes('kol') || h.includes('doctor'));
+  const iC = hdr.findIndex(h => h.includes('credential') || h.includes('qualif') || h.includes('degree') || h.includes('desig'));
+  const iH = hdr.findIndex(h => h.includes('hospital') || h.includes('institute') || h.includes('affil'));
+
+  console.log('Cred cols → name:', iN, 'cred:', iC, 'hosp:', iH);
+  if (iN < 0 || iC < 0) { console.warn('Credential columns not found in sheet'); return; }
+
+  let found = 0;
+  rows.slice(1).forEach(row => {
+    const name = (row[iN] || '').toString().trim();
+    const cred = (row[iC] || '').toString().trim();
+    if (!name || name.match(/^\d+$/)) return;
+    credentialsMap[name.toLowerCase()] = {
+      credential: cred,
+      hospital:   iH >= 0 ? (row[iH] || '').toString().trim() : '',
+    };
+    found++;
+  });
+
+  console.log(`Credentials loaded: ${found} doctors`);
+  if (found > 0) renderGallery(); // re-render with credentials now populated
 }
 
 function lookupCred(name) {
