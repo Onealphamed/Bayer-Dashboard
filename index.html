@@ -104,7 +104,7 @@ html.dark .kol-isp-card{background:linear-gradient(135deg,#0a1220 0%,#002060 100
 .spk-photo-wrap{background:linear-gradient(160deg,#e8effc 0%,#f0f7e8 100%);padding:28px 0 0;display:flex;justify-content:center;position:relative}
 .spk-photo-wrap.onco{background:linear-gradient(160deg,#dbeafe 0%,#eff6ff 100%)}
 .spk-photo-wrap.opthal{background:linear-gradient(160deg,#dcfce7 0%,#f0fdf4 100%)}
-.spk-avatar{width:130px;height:130px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.18);display:block}
+.spk-avatar{width:163px;height:163px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.18);display:block}
 .spk-sessions-badge{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px}
 .spk-body{background:linear-gradient(135deg,#003A8F,#0050C8);padding:14px 14px 18px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
 .spk-body.opthal{background:linear-gradient(135deg,#2D7D2D,#78BE20)}
@@ -2318,42 +2318,67 @@ let galleryOpthalShown = 10;
 const credentialsMap = {};
 const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?output=csv&sheet=Sheet2';
 
+function parseCSVRows(text) {
+  return text.trim().split('\n').map(r => {
+    const out = []; let cur = '', inQ = false;
+    for (let i = 0; i < r.length; i++) {
+      const c = r[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur.trim());
+    return out;
+  });
+}
+
 async function fetchCredentials() {
-  try {
-    const res  = await fetch(SHEET2_URL, { cache: 'no-store' });
-    if (!res.ok) return;
-    const text = await res.text();
-    const rows = text.trim().split('\n').map(r => {
-      // Parse CSV row respecting quoted fields
-      const out = []; let cur = '', inQ = false;
-      for (let i = 0; i < r.length; i++) {
-        const c = r[i];
-        if (c === '"') { inQ = !inQ; }
-        else if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
-        else cur += c;
-      }
-      out.push(cur.trim());
-      return out;
-    });
-    if (!rows.length) return;
-    const hdr  = rows[0].map(h => h.toLowerCase());
-    const iN   = hdr.findIndex(h => h.includes('name'));
-    const iC   = hdr.findIndex(h => h.includes('credential') || h.includes('qualif') || h.includes('degree') || h.includes('desig'));
-    const iH   = hdr.findIndex(h => h.includes('hospital') || h.includes('institute') || h.includes('affil'));
-    const iT   = hdr.findIndex(h => h.includes('therapy') || h.includes('dept'));
-    if (iN < 0 || iC < 0) return; // Sheet2 doesn't have credentials columns yet
-    rows.slice(1).forEach(row => {
-      const name = (row[iN] || '').trim();
-      if (!name) return;
-      credentialsMap[name.toLowerCase()] = {
-        credential: (row[iC] || '').trim(),
-        hospital:   iH >= 0 ? (row[iH] || '').trim() : '',
-        therapy:    iT >= 0 ? (row[iT] || '').trim() : '',
-      };
-    });
-    // Re-render gallery with credentials populated
-    if (Object.keys(credentialsMap).length > 0) renderGallery();
-  } catch(e) { /* silent — credentials optional */ }
+  // Try Sheet2, then sheet named Speakers, then gid=1
+  const urls = [
+    SHEET2_URL,
+    SHEET2_URL.replace('sheet=Sheet2','sheet=Speakers'),
+    SHEET2_URL.replace('sheet=Sheet2','sheet=KOL'),
+    SHEET2_URL.replace('sheet=Sheet2','gid=1'),
+  ];
+  for (const url of urls) {
+    try {
+      const res  = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const text = await res.text();
+      const rows = parseCSVRows(text);
+      if (rows.length < 2) continue;
+      const hdr = rows[0].map(h => h.toLowerCase().trim());
+
+      // Need at least a name column and one of: credential/designation/hospital
+      const iN = hdr.findIndex(h => h.includes('name') || h.includes('doctor') || h.includes('kol'));
+      const iC = hdr.findIndex(h =>
+        h.includes('credential') || h.includes('qualif') || h.includes('degree') ||
+        h.includes('desig') || h.includes('speciali') || h.includes('title'));
+      const iH = hdr.findIndex(h =>
+        h.includes('hospital') || h.includes('institute') || h.includes('affil') ||
+        h.includes('college') || h.includes('centre') || h.includes('center'));
+      const iT = hdr.findIndex(h => h.includes('therapy') || h.includes('dept') || h.includes('area'));
+
+      // Skip if this looks like the main webinar sheet (has "event" column)
+      const hasEvent = hdr.some(h => h.includes('event') || h.includes('webinar'));
+      if (hasEvent && iC < 0) continue;
+      if (iN < 0 && iC < 0) continue;
+
+      const nameCol = iN >= 0 ? iN : 0;
+      let found = 0;
+      rows.slice(1).forEach(row => {
+        const name = (row[nameCol] || '').trim();
+        if (!name || name.match(/^\d+$/)) return; // skip blank or number-only rows
+        credentialsMap[name.toLowerCase()] = {
+          credential: iC >= 0 ? (row[iC] || '').trim() : '',
+          hospital:   iH >= 0 ? (row[iH] || '').trim() : '',
+          therapy:    iT >= 0 ? (row[iT] || '').trim() : '',
+        };
+        found++;
+      });
+      if (found > 0) { renderGallery(); return; } // success — stop trying URLs
+    } catch(e) { /* try next URL */ }
+  }
 }
 
 function lookupCred(name) {
@@ -2427,8 +2452,18 @@ function buildGalleryData() {
   });
   // Attach Drive photos
   Object.values(map).forEach(k => { k.photoUrl = findPhoto(k.name); });
-  const all  = Object.values(map).sort((a,b) => b.sessions - a.sessions);
-  // Show ALL speakers — those with Drive photos get real photos, others get initials avatars
+
+  // Priority: photo+credential first, then photo only, then credential only, then rest
+  function spkPriority(k) {
+    if (k.photoUrl && k.credential) return 3;
+    if (k.photoUrl)                 return 2;
+    if (k.credential)               return 1;
+    return 0;
+  }
+  const all = Object.values(map).sort((a, b) => {
+    const diff = spkPriority(b) - spkPriority(a);
+    return diff !== 0 ? diff : b.sessions - a.sessions;
+  });
   galleryOncoAll   = all.filter(k => k.therapy === 'Onco');
   galleryOpthalAll = all.filter(k => k.therapy === 'Opthal');
 }
