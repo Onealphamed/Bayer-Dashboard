@@ -2310,6 +2310,10 @@ Object.entries(DRIVE_FILE_IDS).forEach(([name, id]) => {
   };
 });
 
+// Credentials map and Sheet2 URL — must be declared before HARDCODED_CREDS
+const credentialsMap = {};
+const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?gid=967781355&single=true&output=csv';
+
 // Hardcoded credentials — loaded instantly, no fetch needed
 // fetchCredentials() below can add more from Sheet2 dynamically
 const HARDCODED_CREDS = {
