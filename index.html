@@ -2285,56 +2285,34 @@ function toggleDark() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ── SPEAKER GALLERY ────────────────────────────────
-const DRIVE_FOLDER_ID = '10OFGicD1RhZsGNog11BXZDgD_69MEd0r';
-let drivePhotoMap   = {};   // { 'dr ajay kapoor': { name, photoUrl } }
+// Hardcoded Drive file IDs — no fetch needed, gallery loads instantly
+const DRIVE_FILE_IDS = {
+  'Dr Lakshmi Prasanna S': '1PPiqiidQiF298WL6iIWNMHW3qgkKDrJV',
+  'Dr Rakesh Pinninti':    '1JkCVd0TpZ0J509hSeL_rIdCcoaYgyT5W',
+  'Dr Ramesh Reddy':       '1cQDUbUinXM30Ze-eWOkukGHoAUovZA6e',
+  'Dr Sai Divya N':        '1G24ct2Zz39FEdGBpPVrCl4wbrcCUsbfy',
+  'Dr Sweta K':            '1fzwhSSwAlIRNhrNUfMqX8sbyByFudReK',
+  'Dr Venugopal Arroju':   '1-5EW2PX7kjtoHTj_ua5R2P8y_397MBU0',
+  'Dr. Debmalya Das':      '1OYgOoPn0_gLB8xTavhTCYUyKlzkZTkRD',
+  'Dr. Kelvin Teo':        '1F2NhwGTX04pV4n3FBfaIBhEWFCZIcSPo',
+  'Dr. Pranab Das':        '137RxIuYoy4p0Ee3Zug0mRq1M3M3uWr1y',
+  'Dr. Shobhit Varma':     '1bxtxUHWvbUZ6O-LprQj_NZ3UtrzF4tJ7',
+  'Dr. Subhadip Sarkar':   '1nUqQdYuEe7LBkrW0M04CJ8DCUdF8u-ge'
+};
+
+// Build drivePhotoMap at startup — no async fetch required
+const drivePhotoMap = {};
+Object.entries(DRIVE_FILE_IDS).forEach(([name, id]) => {
+  drivePhotoMap[name.toLowerCase()] = {
+    name,
+    photoUrl: `https://drive.google.com/thumbnail?id=${id}&sz=w400-h400`
+  };
+});
+
 let galleryOncoAll  = [];
 let galleryOpthalAll = [];
 let galleryOncoShown  = 10;
 let galleryOpthalShown = 10;
-let galleryLoaded   = false;
-
-// Fetch Drive folder via CORS proxy, parse file IDs + names from HTML
-async function fetchDrivePhotos() {
-  try {
-    const folderUrl = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}`;
-    const proxy     = `https://api.allorigins.win/get?url=${encodeURIComponent(folderUrl)}`;
-    const res  = await fetch(proxy, { cache: 'no-store' });
-    const json = await res.json();
-    const html = json.contents || '';
-
-    const map = {};
-    // Drive embeds file data as JSON arrays: ["FILE_ID", ..., "FILENAME.EXT", ...]
-    // Extract all 33-char Drive IDs that appear near image filenames
-    const imgPattern = /["']([a-zA-Z0-9_-]{25,})["'][^[\]]{0,200}["']([^"']+\.(jpe?g|png|webp|gif))["']/gi;
-    let m;
-    while ((m = imgPattern.exec(html)) !== null) {
-      const id  = m[1];
-      const fn  = m[2];
-      const name = fn.replace(/\.[^.]+$/, '').trim();
-      map[name.toLowerCase()] = { name, photoUrl: `https://drive.google.com/thumbnail?id=${id}&sz=w400-h400` };
-    }
-    // Fallback: look for IDs near known filenames from the folder
-    const knownFiles = [
-      'Dr Lakshmi Prasanna S','Dr Rakesh Pinninti','Dr Ramesh Reddy',
-      'Dr Sai Divya N','Dr Sweta K','Dr Venugopal Arroju','Dr. Debmalya Das',
-      'Dr. Kelvin Teo','Dr. Pranab Das','Dr. Shobhit Varma','Dr. Subhadip Sarkar'
-    ];
-    knownFiles.forEach(name => {
-      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`["']([a-zA-Z0-9_-]{25,})["'][^"']*${escaped}|${escaped}[^"']*["']([a-zA-Z0-9_-]{25,})["']`, 'i');
-      const hit = html.match(re);
-      if (hit) {
-        const id = hit[1] || hit[2];
-        if (id) map[name.toLowerCase()] = { name, photoUrl: `https://drive.google.com/thumbnail?id=${id}&sz=w400-h400` };
-      }
-    });
-    console.log('Drive photos parsed:', Object.keys(map).length, map);
-    return map;
-  } catch(e) {
-    console.warn('Drive fetch failed:', e.message);
-    return {};
-  }
-}
 
 // Fuzzy name match: strip "Dr."/"Dr " prefix, compare first 8 chars
 function nameMatch(a, b) {
@@ -2392,33 +2370,27 @@ function buildGalleryData() {
   // Attach Drive photos
   Object.values(map).forEach(k => { k.photoUrl = findPhoto(k.name); });
   const all  = Object.values(map).sort((a,b) => b.sessions - a.sessions);
-  // Only show those with a real Drive photo
-  galleryOncoAll   = all.filter(k => k.therapy === 'Onco'   && k.photoUrl);
-  galleryOpthalAll = all.filter(k => k.therapy === 'Opthal' && k.photoUrl);
+  // Show ALL speakers — those with Drive photos get real photos, others get initials avatars
+  galleryOncoAll   = all.filter(k => k.therapy === 'Onco');
+  galleryOpthalAll = all.filter(k => k.therapy === 'Opthal');
 }
 
-async function renderGallery() {
+function renderGallery() {
   const oncoGrid   = document.getElementById('galleryOncoGrid');
   const opthalGrid = document.getElementById('galleryOpthalGrid');
-
-  // Show loading state on first open
-  if (!galleryLoaded) {
-    oncoGrid.innerHTML = opthalGrid.innerHTML =
-      '<div class="gallery-no-results">⏳ Loading photos from Google Drive…</div>';
-    drivePhotoMap = await fetchDrivePhotos();
-    galleryLoaded = true;
-  }
 
   buildGalleryData();
 
   const oncoSlice   = galleryOncoAll.slice(0, galleryOncoShown);
   const opthalSlice = galleryOpthalAll.slice(0, galleryOpthalShown);
 
-  oncoGrid.innerHTML   = oncoSlice.length   ? oncoSlice.map(speakerCardHTML).join('')   : '<div class="gallery-no-results">No Oncology photos found in Drive folder</div>';
-  opthalGrid.innerHTML = opthalSlice.length ? opthalSlice.map(speakerCardHTML).join('') : '<div class="gallery-no-results">No Ophthalmology photos found in Drive folder</div>';
+  oncoGrid.innerHTML   = oncoSlice.length   ? oncoSlice.map(speakerCardHTML).join('')   : '<div class="gallery-no-results">No Oncology speakers found</div>';
+  opthalGrid.innerHTML = opthalSlice.length ? opthalSlice.map(speakerCardHTML).join('') : '<div class="gallery-no-results">No Ophthalmology speakers found</div>';
 
-  document.getElementById('galleryOncoCount').textContent   = `${galleryOncoAll.length} with photos`;
-  document.getElementById('galleryOpthalCount').textContent = `${galleryOpthalAll.length} with photos`;
+  const oncoWithPhoto   = galleryOncoAll.filter(k => k.photoUrl).length;
+  const opthalWithPhoto = galleryOpthalAll.filter(k => k.photoUrl).length;
+  document.getElementById('galleryOncoCount').textContent   = `${galleryOncoAll.length} speakers · ${oncoWithPhoto} with photos`;
+  document.getElementById('galleryOpthalCount').textContent = `${galleryOpthalAll.length} speakers · ${opthalWithPhoto} with photos`;
 
   const om = document.getElementById('galleryOncoMore');
   const pm = document.getElementById('galleryOpthalMore');
