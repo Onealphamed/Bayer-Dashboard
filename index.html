@@ -2310,6 +2310,26 @@ Object.entries(DRIVE_FILE_IDS).forEach(([name, id]) => {
   };
 });
 
+// Hardcoded credentials — loaded instantly, no fetch needed
+// fetchCredentials() below can add more from Sheet2 dynamically
+const HARDCODED_CREDS = {
+  'Dr Lakshmi Prasanna S': 'Consultant Vitreo Retinal Surgeon · Maxivision Eye Hospital, Visakhapatnam',
+  'Dr Sweta K':            'Consultant Vitreo Retinal Surgeon · Vasan Eye Care, Vijayawada',
+  'Dr Sai Divya N':        'Consultant Vitreo Retinal Surgeon · Dr Agarwal\'s Eye Hospital, Rajahmundry',
+  'Dr. Pranab Das':        'Senior Vitreo Retina Surgeon · Center For Sight, Kolkata',
+  'Dr. Debmalya Das':      'Senior Vitreo Retina Surgeon · Sankara Netralaya, New Town, Kolkata',
+  'Dr. Subhadip Sarkar':   'Vitreo-Retinal & Phaco Consultant · Disha Eye Hospitals · MS Ophthalmology, DNB · KPCMCH Kolkata',
+  'Dr. Shobhit Varma':     'Vitreo-Retinal & Phaco Consultant · ASG Eye Hospitals · DNB Ophthalmology, LVPEI · FICO (UK)',
+  'Dr Ramesh Reddy':       'Consultant Medical Oncologist · Omega Hospitals, Tirupati',
+  'Dr Rakesh Pinninti':    'Consultant Medical Oncologist · Basavatarakam Indo-American Cancer Hospital, Hyderabad',
+  'Dr Venugopal Arroju':   'Consultant Medical Oncologist · Medicover Hospitals, Hyderabad',
+  'Dr. Kelvin Teo':        'MBBS (London) · FAMS (Singapore) · PhD (Sydney) · Senior Consultant Ophthalmologist · Duke NUS Eye ACP',
+};
+// Pre-populate credentialsMap so it's available before any fetch
+Object.entries(HARDCODED_CREDS).forEach(([name, cred]) => {
+  credentialsMap[name.toLowerCase()] = { credential: cred, hospital: '' };
+});
+
 let galleryOncoAll   = [];
 let galleryOpthalAll = [];
 let galleryOncoShown  = 10;
