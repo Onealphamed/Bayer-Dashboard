@@ -1,0 +1,70 @@
+// UTILS MODULE
+
+function parseDateLoose(str) {
+  if (!str) return null;
+  let d = new Date(str);
+  if (!isNaN(d)) return d;
+  // Handle "4-Sept-2025", "30-Sept-2025" etc.
+  d = new Date(str.replace(/(\d{1,2})[-\/]([A-Za-z]+)[-\/](\d{4})/, '$2 $1 $3'));
+  if (!isNaN(d)) return d;
+  return null;
+}
+
+const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Normalise any month string to full name: "feb" / "FEB" / "February" → "February"
+function normalizeMonth(raw) {
+  if (!raw) return '';
+  const s = raw.toString().trim().toLowerCase().slice(0, 3);
+  return MONTH_FULL.find(m => m.toLowerCase().startsWith(s)) || raw.trim();
+}
+
+// Returns months sorted by their earliest date within the given dataset.
+// Months whose dates can't be parsed are still included, sorted by calendar order.
+function getSortedMonths(data) {
+  const earliest = {};
+  data.forEach(d => {
+    if (!d.month) return;
+    const mn = normalizeMonth(d.month);
+    const dt = parseDateLoose(d.date);
+    if (!earliest[mn] || (dt && dt < earliest[mn])) {
+      // Use parsed date if available; fallback to a synthetic date by calendar order
+      earliest[mn] = dt || new Date(2000, MONTH_FULL.indexOf(mn), 1);
+    }
+  });
+  return Object.keys(earliest).sort((a, b) => earliest[a] - earliest[b]);
+}
+
+const COLORS = {
+  onco:'#003A8F', opthal:'#78BE20',
+  oncoAlpha:'rgba(0,58,143,0.10)', opthalAlpha:'rgba(120,190,32,0.10)',
+  oncoMid:'rgba(0,58,143,0.6)', opthalMid:'rgba(120,190,32,0.6)'
+};
+
+function parseCSVRows(text) {
+  return text.trim().split('\n').map(r => {
+    const out = []; let cur = '', inQ = false;
+    for (let i = 0; i < r.length; i++) {
+      const c = r[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur.trim());
+    return out;
+  });
+}
+
+function parseKOLNames(raw) {
+  if (!raw || !raw.trim()) return [];
+  return raw.split(/[,;\/\n]+/)
+    .map(n => toTitleCase(n.trim().replace(/\s+/g, ' ')))
+    .filter(n => n.length > 1);
+}
+
+// Normalise a display name to a stable key for dedup (first + last word, lowercase)
+function kolKey(name) {
+  const parts = name.trim().toLowerCase().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return parts[0] + ' ' + parts[parts.length - 1];
+}
