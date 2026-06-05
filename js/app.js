@@ -1,5 +1,11 @@
 // APP MODULE
 
+function toggleDark() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('bayer_dark', isDark ? '1' : '0');
+  document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TAB SWITCHING
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
