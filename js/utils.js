@@ -1,5 +1,29 @@
 // UTILS MODULE
 
+// ── Math + number formatting helpers ──
+// (Restored: these were lost when index.html was split into modules,
+//  which crashed renderKPIs() on boot and left the dashboard blank.)
+function sum(arr) {
+  return (arr || []).reduce((a, b) => a + (Number(b) || 0), 0);
+}
+function avg(arr) {
+  const nums = (arr || []).filter(v => v !== null && v !== '' && !isNaN(v)).map(Number);
+  return nums.length ? sum(nums) / nums.length : 0;
+}
+// Percentage change of curr vs prev, rounded to whole number.
+function pct(curr, prev) {
+  if (!prev) return 0;
+  return Math.round(((curr - prev) / prev) * 100);
+}
+// Format a number with thousands separators; optional fixed decimals.
+function fmt(n, decimals = 0) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-IN', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
 function parseDateLoose(str) {
   if (!str) return null;
   let d = new Date(str);

@@ -27,14 +27,14 @@ function parseCSV(text) {
 }
 
 function applySheetData(rows) {
-  // Sheet has NO header row — first row is data.
-  // Fixed column positions (0-based):
-  // 0=ID | 1=Therapy | 2=Event | 3=Month | 4=Date | 5=Reported | 6=? | 7=Type | 8=Attendees | 9=Speakers
+  // Sheet column layout (0-based). The sheet HAS a header row, which we skip below.
+  // 0=No | 1=Therapy Area | 2=Name of Event | 3=Month | 4=Date of event |
+  // 5=Invite Sent | 6=Report Sent | 7=Type | 8=No of attendees | 9=Name of KOLs
   const iT = 1;  // Therapy  (Onco / Opthal)
   const iE = 2;  // Event name
   const iM = 3;  // Month
   const iD = 4;  // Date
-  const iR = 5;  // Reported (Yes/No)
+  const iR = 6;  // Reported = "Report Sent" (Yes/No)
   const iY = 7;  // Session type (NSP/ISP/Advisory)
   const iA = 8;  // Attendees
   const iK = 9;  // KOL / Speakers
@@ -43,6 +43,9 @@ function applySheetData(rows) {
   console.log('Sheet row count:', rows.length, '| Sample row 0:', rows[0] ? rows[0].slice(0,10).join(' | ') : 'empty');
 
   const parsed = rows
+    // Keep only real data rows: the "No" column must be a number. This drops the
+    // header row and any stray/blank rows automatically.
+    .filter(r => /^\d+$/.test((r[0] || '').toString().trim()))
     .filter(r => r[iT] && r[iT].toString().trim())
     .map((r, i) => ({
       id: i + 1,
