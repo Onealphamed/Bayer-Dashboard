@@ -44,31 +44,42 @@ async function fetchCredentials() {
   const hdr  = rows[0].map(h => h.toLowerCase().trim());
   console.log('Credentials sheet headers:', hdr);
 
-  // Column: Sr.No | Name of the KOL | Credentials
+  // Column: Sr.No | Name of the KOL | Credentials | (optional) Photo Link
   const iN = hdr.findIndex(h => h.includes('name') || h.includes('kol') || h.includes('doctor'));
   const iC = hdr.findIndex(h => h.includes('credential') || h.includes('qualif') || h.includes('degree') || h.includes('desig'));
   const iH = hdr.findIndex(h => h.includes('hospital') || h.includes('institute') || h.includes('affil'));
+  const iP = hdr.findIndex(h => h.includes('photo') || h.includes('image') || h.includes('pic') || h.includes('drive') || h.includes('link'));
 
-  console.log('Cred cols → name:', iN, 'cred:', iC, 'hosp:', iH);
-  if (iN < 0 || iC < 0) { console.warn('Credential columns not found in sheet'); return; }
+  console.log('Cred cols → name:', iN, 'cred:', iC, 'hosp:', iH, 'photo:', iP);
+  if (iN < 0) { console.warn('Name column not found in sheet'); return; }
 
-  let found = 0;
+  let found = 0, photosFound = 0;
   rows.slice(1).forEach(row => {
     const name = (row[iN] || '').toString().trim();
-    const cred = (row[iC] || '').toString().trim();
     if (!name || name.match(/^\d+$/)) return;
     const key = name.toLowerCase();
-    // Don't overwrite hardcoded credentials — they're correct and pre-formatted
-    if (credentialsMap[key] && credentialsMap[key].credential) return;
-    credentialsMap[key] = {
-      credential: cred,
-      hospital:   iH >= 0 ? (row[iH] || '').toString().trim() : '',
-    };
-    found++;
+
+    // Photo link → Drive thumbnail. Don't overwrite an existing (hardcoded) photo.
+    if (iP >= 0 && !(drivePhotoMap[key] && drivePhotoMap[key].photoUrl)) {
+      const pid = driveIdFromLink(row[iP]);
+      if (pid) {
+        drivePhotoMap[key] = { name, photoUrl: drivePhotoURL(pid) };
+        photosFound++;
+      }
+    }
+
+    // Credentials. Don't overwrite hardcoded credentials — they're pre-formatted.
+    if (iC >= 0) {
+      const cred = (row[iC] || '').toString().trim();
+      if (cred && !(credentialsMap[key] && credentialsMap[key].credential)) {
+        credentialsMap[key] = { credential: cred, hospital: iH >= 0 ? (row[iH] || '').toString().trim() : '' };
+        found++;
+      }
+    }
   });
 
-  console.log(`Credentials loaded: ${found} doctors`);
-  if (found > 0) renderGallery(); // re-render with credentials now populated
+  console.log(`Credentials loaded: ${found} · Photos loaded from sheet: ${photosFound}`);
+  if (found > 0 || photosFound > 0) renderGallery(); // re-render now that data is populated
 }
 
 function lookupCred(name) {
@@ -103,6 +114,25 @@ function findPhoto(name) {
     if (nameMatch(name, key)) return drivePhotoMap[key].photoUrl;
   }
   return null;
+}
+
+// Extract a Google Drive file ID from any common link format (or a bare ID),
+// so users can paste whatever Drive gives them into the sheet's photo column:
+//   https://drive.google.com/file/d/<ID>/view?usp=sharing
+//   https://drive.google.com/open?id=<ID>   ·   .../uc?id=<ID>   ·   .../thumbnail?id=<ID>
+//   <ID>            (the bare id on its own)
+function driveIdFromLink(link) {
+  if (!link) return null;
+  const s = link.toString().trim();
+  if (!s) return null;
+  const m = s.match(/\/file\/d\/([A-Za-z0-9_-]{20,})/) || s.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9_-]{20,}$/.test(s)) return s; // bare id pasted directly
+  return null;
+}
+
+function drivePhotoURL(id) {
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w400-h400`;
 }
 
 function avatarURL(name, therapy) {
