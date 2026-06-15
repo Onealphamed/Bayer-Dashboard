@@ -262,19 +262,69 @@ const RAW_DATA = [
 let MONTH_ORDER = ['February','March','April','May','June','July','August','September','October','November','December','January'];
 
 // ── SPEAKER GALLERY ────────────────────────────────
-// Hardcoded Drive file IDs — no fetch needed, gallery loads instantly
+// Hardcoded Drive file IDs — no fetch needed, gallery loads instantly.
+// Photos can also be added via a "Photo" column in the credentials sheet
+// (see fetchCredentials in tab3-gallery.js) — both sources are merged.
 const DRIVE_FILE_IDS = {
+  // Original set
   'Dr Lakshmi Prasanna S': '1PPiqiidQiF298WL6iIWNMHW3qgkKDrJV',
   'Dr Rakesh Pinninti':    '1JkCVd0TpZ0J509hSeL_rIdCcoaYgyT5W',
   'Dr Ramesh Reddy':       '1cQDUbUinXM30Ze-eWOkukGHoAUovZA6e',
   'Dr Sai Divya N':        '1G24ct2Zz39FEdGBpPVrCl4wbrcCUsbfy',
   'Dr Sweta K':            '1fzwhSSwAlIRNhrNUfMqX8sbyByFudReK',
-  'Dr Venugopal Arroju':   '1-5EW2PX7kjtoHTj_ua5R2P8y_397MBU0',
   'Dr. Debmalya Das':      '1OYgOoPn0_gLB8xTavhTCYUyKlzkZTkRD',
   'Dr. Kelvin Teo':        '1F2NhwGTX04pV4n3FBfaIBhEWFCZIcSPo',
   'Dr. Pranab Das':        '137RxIuYoy4p0Ee3Zug0mRq1M3M3uWr1y',
   'Dr. Shobhit Varma':     '1bxtxUHWvbUZ6O-LprQj_NZ3UtrzF4tJ7',
-  'Dr. Subhadip Sarkar':   '1nUqQdYuEe7LBkrW0M04CJ8DCUdF8u-ge'
+  'Dr. Subhadip Sarkar':   '1nUqQdYuEe7LBkrW0M04CJ8DCUdF8u-ge',
+  // From the shared Drive photo folder (filenames = doctor names)
+  'Dr Aanal Shah':                    '1Vu3H0B3cPV5NQZf5uL5BD_nnjNxpS6e6',
+  'Dr Abhijit Das':                   '1Y4bIXV6dPLpxq_NpJqsr0_Cmx_qy61fu',
+  'Dr Aditi Gupta':                   '1ReVr88l0YjJUbST8nY9C8nSBB2_TBAv_',
+  'Dr Chinmaya Kumar Pani':           '1BfLXcpJ_tVuvf0A3OFDzy7ovrgGlYNIK',
+  'Dr Gayatri Gopan':                 '1HX0Rbey0HIaOpWSHT1W5FaKOTqbBr1x1',
+  'Dr K Meher Lakshmi':               '1J9NKlIW9ORoMUcXE_i13btX0ts9xV0eB',
+  'Dr K Sanath':                      '1qNQSC4607XN2yoQPR_CjG8h5O7Uw4TCu',
+  'Dr Karthikeyan S':                 '1Zwx00Rl6QSvpJ6AKxxSPdZjF2Vwd4UpJ',
+  'Dr Murali Subramanian':            '1bnU8vO6YBCheqW2NLLnS2gPsvrRbdGqA',
+  'Dr P Manasa':                      '1rlbH0OH8AeKFs9iDbCnLOjMq6Q3enQjH',
+  'Dr P Nageswara Reddy':             '1d5-TE8zw8AenlrI5d-VYrrqrjrRcepc9',
+  'Dr P Venkateswara Rao':            '1hiGaQHRYVnp662vDw_gpUZo0bqFRT-Us',
+  'Dr Rajiv Gandhi':                  '1_BEzg5o6-perGgoapasEt4Wvs5RNnnUf',
+  'Dr Sugandha Goel':                 '1i-IOrN1sNBYPm6rk8w7cUEvWCRwXzjC3',
+  'Dr Venugopal Arroju':              '1bxM8KJ5LlJKzodDSF4rY7b3cJm7lNVi3',
+  'Dr Vivek Agarwala':                '159sjvLBfscEgFMYw2uRk1TicZz4kOGUo',
+  'Dr. Abhishek Anand':               '1BXnKNg-4DZFbBLVGljOxHjvynJraHnqb',
+  'Dr. Aditya Sarin':                 '1P8nVLzR2mOxbs7z-BumA2nrXHVxnfbQd',
+  'Dr. Ajay Gupta':                   '1C66MRm7SLbmzdgUqwyerAehoaVLuSmNP',
+  'Dr. Amit Kumar':                   '1YAWzPL1J0c4mlnien7nNHbE70uEpyTkC',
+  'Dr. Avinash Upadhyay':             '10xnLZdoC_Ew16ECeA7s2WoCT_KMP9Vsm',
+  'Dr. Basudha Jaiswal':              '1nVwtXHZGxlSU7-tyHogcw6oLqAogYTNi',
+  'Dr. Dilip Harindran Vallathol':    '1RQFnfTJs6HO1xfWb5Ivn3tGhmyo4wpk4',
+  'Dr. G Vamshi Krishna Reddy':       '15RKkOwT-2Bpw0rHL0LO-szNJnL4sNg50',
+  'Dr. Gitumoni Sharma':              '13nE5FnUtHMQyhaz4vnZvb1Sz-POJ4FG9',
+  'Dr. Guru Sravan':                  '1A0QPviQfuk_sqgObS93nH7IkGbgUuVHU',
+  'Dr. Haridas P Mani':               '1iAbb2tgeyq0g0CbBB0KjdTsuSOS_Eoym',
+  'Dr. K Venkatesh':                  '1cQcNMxE1k9Hzgy1HgVddPbRutOco2euT',
+  'Dr. K. Sanath':                    '1KEeJTawVckwNrfCkl-gzxkxULSTi9fcP',
+  'Dr. N Thejeswar':                  '15fTcl_5RvQ5JaNiUhTKcMj5VW2TN2_E2',
+  'Dr. Neelam Sadhwani':              '12tgpMHJ96tWM6LMlZW5WlFhA1CGt32__',
+  'Dr. Palanki Satya Dattatreya':     '1zbIdhc7ouk9qME3m4cY1WPucb9Qrvqf5',
+  'Dr. Pallavi Singh':                '1XoHjac2pc4Z7JwWtcAlYWwy6VMMPgdJI',
+  'Dr. Prashant Jain':                '1hIQclXhFiey3TM-IP5tr4cZxFvjXKwbM',
+  'Dr. Rupak Roy':                    '1au8d1iH0umms5y-L2RSWj_5HDV9rpYfB',
+  'Dr. Shasanka Sekhar Das':          '1bxP9Bo3e8Z9k0kNxDayaUj8CLZoMCHQg',
+  'Dr. Smita Kumari':                 '159qA8EjZZZ6kO6HlnSiyjlsdn2kS6Pgl',
+  'Dr. Somnath Chakraborty':          '1br6pRiOLmN6kD395VZsNVHITGldCneiw',
+  'Dr. Soumava Mandal':               '1X7L1vJnB1bKfg234qAJYil8TvkRs1FIo',
+  'Dr. Sravan Kumar Chinthala':       '1vjUvZgFuZiO3O440741fMR2h0SAo3ZfH',
+  'Dr. Sravan Kumar Dubasi':          '1TLPGhrrlVYMeoAa4PrGHAQkkQB5CNNDf',
+  'Dr. Srinath Bharadwaj':            '1ZvedFBhP2RXQpzDMRr-RJ3Y0krm7hp1q',
+  'Dr. Venkata Pradeep Babu Koyyala': '1CMwURtIuefoult6Lx43Le_2wbSEDfnaF',
+  'Dr. Vidhi Bajpai':                 '1qHCaVuzPgUB6EvXHDUHhov3yT7_DQhKC',
+  'Dr.Eesh Nigam':                    '110Tfv37uwlqTlU2sSpbuXZkxYuUSbxi1',
+  'Dr.Jaydeep Majumder':              '1Ib9pZZc5_CdBNUmI15-5mYBBKIdkj2AD',
+  'Subhrangshu Sengupta':             '1baaPXitaY4g8MjmzkcGgSRNQ9LhstwHj'
 };
 
 // Build drivePhotoMap at startup — no async fetch required
