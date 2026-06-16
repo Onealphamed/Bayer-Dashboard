@@ -1,8 +1,10 @@
 // SYNC MODULE
 
 // "Publish to web" CSV URL — works with public CORS, no backend needed.
-// To update: File → Share → Publish to web → Sheet1 → CSV → copy URL here.
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYwkCYHxM0pGXyB6rh2-xiH_zpBkWrgx4s90SIs8yZpxvqvr-cYc_wP6omojYPKfgykiYNHOnwWrC1/pub?output=csv';
+// This is the LIVE "Bayer" tracker tab (gid 2007197158) of the working
+// spreadsheet, auto-republished on every edit. To update: File → Share →
+// Publish to web → select the data tab → CSV → copy URL here.
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZmHF8skx5_YbEUvccXG0l8_D8XelTNGV2RNauRsjJno__T2sQFBq_vv0VvyboREoi6sSJLwmNZKvi/pub?gid=2007197158&single=true&output=csv';
 
 // Proper RFC-4180 CSV parser — handles commas and newlines inside quoted fields.
 function parseCSV(text) {
@@ -27,37 +29,51 @@ function parseCSV(text) {
 }
 
 function applySheetData(rows) {
-  // Sheet column layout (0-based). The sheet HAS a header row, which we skip below.
-  // 0=No | 1=Therapy Area | 2=Name of Event | 3=Month | 4=Date of event |
-  // 5=Invite Sent | 6=Report Sent | 7=Type | 8=No of attendees | 9=Name of KOLs
-  const iT = 1;  // Therapy  (Onco / Opthal)
-  const iE = 2;  // Event name
-  const iM = 3;  // Month
-  const iD = 4;  // Date
-  const iR = 6;  // Reported = "Report Sent" (Yes/No)
-  const iY = 7;  // Session type (NSP/ISP/Advisory)
-  const iA = 8;  // Attendees
-  const iK = 9;  // KOL / Speakers
-  const iS = -1; // Salesperson — not in sheet
+  // Header-driven: locate the header row by content and map columns by NAME.
+  // This is resilient to a leading blank column, a title row above the header,
+  // and extra summary columns to the right (all present in the working tab).
+  const norm = s => (s || '').toString().trim().toLowerCase();
+  let hdrIdx = rows.findIndex(r =>
+    r.some(c => norm(c) === 'date of event') || r.some(c => norm(c) === 'name of event'));
+  if (hdrIdx < 0) hdrIdx = 0;
+  const hdr = rows[hdrIdx].map(norm);
+  const col = (...preds) => {
+    for (const p of preds) { const i = hdr.findIndex(p); if (i >= 0) return i; }
+    return -1;
+  };
 
-  console.log('Sheet row count:', rows.length, '| Sample row 0:', rows[0] ? rows[0].slice(0,10).join(' | ') : 'empty');
+  const iNo = col(h => h === 'no' || h === 'sr. no.' || h === 'sr no');
+  const iT  = col(h => h.includes('therapy'));
+  const iE  = col(h => h.includes('name of event'), h => h.includes('event'));
+  const iM  = col(h => h === 'month');                       // first "Month" = data col
+  const iD  = col(h => h.includes('date of event'), h => h.includes('date'));
+  const iR  = col(h => h.includes('report'));                // Report Sent / Report Submitted
+  const iY  = col(h => h === 'type', h => h.includes('type'));
+  const iA  = col(h => h.includes('attend'));
+  const iK  = col(h => h.includes('kol'));
+
+  console.log('Header row', hdrIdx, '| cols No:'+iNo, 'T:'+iT, 'E:'+iE, 'M:'+iM, 'D:'+iD, 'R:'+iR, 'Y:'+iY, 'A:'+iA, 'K:'+iK);
+  if (iT < 0) { console.warn('Therapy column not found — aborting sheet apply'); return 0; }
+
+  const isDataRow = r => iNo >= 0
+    ? /^\d+$/.test((r[iNo] || '').toString().trim())   // a real numbered row
+    : !!(r[iT] && r[iT].toString().trim());
 
   const parsed = rows
-    // Keep only real data rows: the "No" column must be a number. This drops the
-    // header row and any stray/blank rows automatically.
-    .filter(r => /^\d+$/.test((r[0] || '').toString().trim()))
+    .slice(hdrIdx + 1)
+    .filter(isDataRow)
     .filter(r => r[iT] && r[iT].toString().trim())
     .map((r, i) => ({
       id: i + 1,
       therapy:    r[iT].toString().trim(),
-      event:      (r[iE] || '').toString().trim(),
-      month:      normalizeMonth((r[iM] || '').toString().trim()),
-      date:       (r[iD] || '').toString().trim(),
-      type:       (r[iY] || 'NSP').toString().trim() || 'NSP',
-      attendees:  r[iA] ? parseInt(r[iA]) || null : null,
+      event:      iE >= 0 ? (r[iE] || '').toString().trim() : '',
+      month:      iM >= 0 ? normalizeMonth((r[iM] || '').toString().trim()) : '',
+      date:       iD >= 0 ? (r[iD] || '').toString().trim() : '',
+      type:       (iY >= 0 ? (r[iY] || 'NSP').toString().trim() : 'NSP') || 'NSP',
+      attendees:  iA >= 0 && r[iA] ? parseInt(r[iA]) || null : null,
       salesperson: null,
-      reported:   (r[iR] || '').toString().toLowerCase() === 'yes',
-      kols:       r[iK] ? parseKOLNames(r[iK].toString()) : [],
+      reported:   iR >= 0 && (r[iR] || '').toString().toLowerCase() === 'yes',
+      kols:       iK >= 0 && r[iK] ? parseKOLNames(r[iK].toString()) : [],
     }));
   RAW_DATA.length = 0;
   parsed.forEach(x => RAW_DATA.push(x));
