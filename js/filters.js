@@ -26,16 +26,21 @@ const groupBy = (arr,key) => arr.reduce((a,d)=>{ (a[d[key]]=a[d[key]]||[]).push(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CROSS-FILTER: CLICK A MONTH ON A CHART
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function onChartClick(evt, elements, chart, monthLabels) {
+// `buckets` are the month+year entries behind the chart points (from
+// getMonthlyData), so a click means "this month of THIS year".
+function onChartClick(evt, elements, chart, buckets) {
   if (!elements.length) return;
-  const idx    = elements[0].index;
-  const month  = MONTH_ORDER.find(m => m.slice(0,3) === monthLabels[idx]) || monthLabels[idx];
-  const btn    = document.querySelector(`[data-month="${month}"]`);
-  if (!btn) return;
+  const idx = elements[0].index;
+  const b   = buckets && buckets[idx];
+  if (!b) return;
+  const month = b.fullMonth;
+  if (!month) return;
   if (activeMonths.has(month)) activeMonths.delete(month);
   else activeMonths.add(month);
+  if (b.year) { activeYears.clear(); activeYears.add(b.year); }
+  syncYearUI();
   syncMonthUI();
-  showToast(`Filter: ${month}`);
+  showToast(`Filter: ${month}${b.year ? ' ' + b.year : ''}`);
   refresh();
 }
 

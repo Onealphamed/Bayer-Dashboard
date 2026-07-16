@@ -24,21 +24,28 @@ function ttStyle(extras={}) {
   };
 }
 
+// Bucketed by month AND year, so July 2025 and July 2026 are separate points.
+function inBucket(x, b) {
+  return normalizeMonth(x.month) === b.month && getYear(x) === b.year;
+}
+
 function getMonthlyData() {
   const d = currentData;
-  return getSortedMonths(d).map((m,i,arr) => {
-    const onco      = d.filter(x=>x.month===m && x.therapy==='Onco');
-    const opthal    = d.filter(x=>x.month===m && x.therapy==='Opthal');
+  const buckets   = getMonthYearBuckets(d);
+  const multiYear = new Set(buckets.map(b => b.year)).size > 1;
+  return buckets.map((b,i,arr) => {
+    const onco      = d.filter(x=>inBucket(x,b) && x.therapy==='Onco');
+    const opthal    = d.filter(x=>inBucket(x,b) && x.therapy==='Opthal');
     const oncoAtt   = onco.filter(x=>x.attendees);
     const opthalAtt = opthal.filter(x=>x.attendees);
-    // Previous month for % change
-    const prevM     = arr[i-1];
-    const prevOnco  = prevM ? d.filter(x=>x.month===prevM && x.therapy==='Onco') : [];
-    const prevOpth  = prevM ? d.filter(x=>x.month===prevM && x.therapy==='Opthal') : [];
+    // Previous bucket (chronological) for % change
+    const prevB     = arr[i-1];
+    const prevOnco  = prevB ? d.filter(x=>inBucket(x,prevB) && x.therapy==='Onco') : [];
+    const prevOpth  = prevB ? d.filter(x=>inBucket(x,prevB) && x.therapy==='Opthal') : [];
     const oncoChg   = prevOnco.length ? pct(onco.length, prevOnco.length) : null;
     const opthalChg = prevOpth.length ? pct(opthal.length, prevOpth.length) : null;
     return {
-      month: m.slice(0,3), fullMonth: m,
+      month: bucketLabel(b, multiYear), fullMonth: b.month, year: b.year, key: b.key,
       oncoCount:onco.length, opthalCount:opthal.length,
       oncoAtt:sum(oncoAtt.map(x=>x.attendees)),
       opthalAtt:sum(opthalAtt.map(x=>x.attendees)),
@@ -185,22 +192,25 @@ function renderKPIs() {
   const withAtt  = d.filter(x=>x.attendees);
   const oncoAtt  = onco.filter(x=>x.attendees);
   const opthalAtt= opthal.filter(x=>x.attendees);
-  const months   = new Set(d.map(x=>x.month));
+  // Distinct month+year periods in the filtered data (not just month names)
+  const monthCount = getMonthYearBuckets(d).length;
 
-  // Build monthly trend arrays for sparklines (all data, not filtered)
-  const mMonths = getSortedMonths(all);
+  // Build monthly trend arrays for sparklines (all data, not filtered).
+  // Bucketed by month+year so the same month across years isn't merged.
+  const mBuckets  = getMonthYearBuckets(all);
+  const sparkMulti = new Set(mBuckets.map(b=>b.year)).size > 1;
   const spark = {
-    oncoVol:    mMonths.map(m=>all.filter(x=>x.month===m&&x.therapy==='Onco').length),
-    opthalVol:  mMonths.map(m=>all.filter(x=>x.month===m&&x.therapy==='Opthal').length),
-    totalAtt:   mMonths.map(m=>sum(all.filter(x=>x.month===m&&x.attendees).map(x=>x.attendees))),
-    totalVol:   mMonths.map(m=>all.filter(x=>x.month===m).length),
+    oncoVol:    mBuckets.map(b=>all.filter(x=>inBucket(x,b)&&x.therapy==='Onco').length),
+    opthalVol:  mBuckets.map(b=>all.filter(x=>inBucket(x,b)&&x.therapy==='Opthal').length),
+    totalAtt:   mBuckets.map(b=>sum(all.filter(x=>inBucket(x,b)&&x.attendees).map(x=>x.attendees))),
+    totalVol:   mBuckets.map(b=>all.filter(x=>inBucket(x,b)).length),
   };
 
-  // Previous period comparison (last month vs second-to-last in filtered data)
-  const prevMonth = mMonths[mMonths.length-2];
-  const lastMonth = mMonths[mMonths.length-1];
-  const prevAll   = all.filter(x=>x.month===prevMonth);
-  const lastAll   = all.filter(x=>x.month===lastMonth);
+  // Previous period comparison (last month+year vs the one before it)
+  const prevB     = mBuckets[mBuckets.length-2];
+  const lastB     = mBuckets[mBuckets.length-1];
+  const prevAll   = prevB ? all.filter(x=>inBucket(x,prevB)) : [];
+  const lastAll   = lastB ? all.filter(x=>inBucket(x,lastB)) : [];
   const prevOnco  = prevAll.filter(x=>x.therapy==='Onco').length;
   const prevOpthal= prevAll.filter(x=>x.therapy==='Opthal').length;
   const prevAtt   = sum(prevAll.filter(x=>x.attendees).map(x=>x.attendees));
@@ -211,13 +221,13 @@ function renderKPIs() {
   const actKPIs = [
     { id:'spark-ov', label:'Oncology Webinars', value:fmt(currOnco), trend:trendBadge(currOnco,prevOnco), sub:'Total sessions', icon:'🔬', sparkData:spark.oncoVol, sparkColor:COLORS.onco },
     { id:'spark-pv', label:'Ophthal Webinars',  value:fmt(currOpthal), trend:trendBadge(currOpthal,prevOpthal), sub:'Total sessions', icon:'👁️', sparkData:spark.opthalVol, sparkColor:COLORS.opthal },
-    { id:'spark-av', label:'Avg / Month',        value:months.size?fmt(d.length/months.size,1):'—', trend:'', sub:'Overall cadence', icon:'📈', sparkData:spark.totalVol, sparkColor:'#F59E0B' },
+    { id:'spark-av', label:'Avg / Month',        value:monthCount?fmt(d.length/monthCount,1):'—', trend:'', sub:'Overall cadence', icon:'📈', sparkData:spark.totalVol, sparkColor:'#F59E0B' },
   ];
   const impKPIs = [
     { id:'spark-ta', label:'Total Attendees',        value:fmt(currAtt), trend:trendBadge(currAtt,prevAtt), sub:`Across ${withAtt.length} webinars`, icon:'👥', sparkData:spark.totalAtt, sparkColor:COLORS.opthal, green:true },
     { id:'spark-aa', label:'Avg Attendees',           value:fmt(avg(withAtt.map(x=>x.attendees)),1), trend:'', sub:'Per webinar overall', icon:'🎯', sparkData:spark.totalAtt, sparkColor:COLORS.opthal, green:true },
-    { id:'spark-oa', label:'Onco Avg Attendance',    value:fmt(avg(oncoAtt.map(x=>x.attendees)),1), trend:'', sub:'Per Onco session', icon:'🔬', sparkData:mMonths.map(m=>{const r=all.filter(x=>x.month===m&&x.therapy==='Onco'&&x.attendees);return r.length?avg(r.map(x=>x.attendees)):null;}), sparkColor:COLORS.onco },
-    { id:'spark-pa', label:'Ophthal Avg Attendance', value:fmt(avg(opthalAtt.map(x=>x.attendees)),1), trend:'', sub:'Per Ophthal session', icon:'👁️', sparkData:mMonths.map(m=>{const r=all.filter(x=>x.month===m&&x.therapy==='Opthal'&&x.attendees);return r.length?avg(r.map(x=>x.attendees)):null;}), sparkColor:COLORS.opthal },
+    { id:'spark-oa', label:'Onco Avg Attendance',    value:fmt(avg(oncoAtt.map(x=>x.attendees)),1), trend:'', sub:'Per Onco session', icon:'🔬', sparkData:mBuckets.map(b=>{const r=all.filter(x=>inBucket(x,b)&&x.therapy==='Onco'&&x.attendees);return r.length?avg(r.map(x=>x.attendees)):null;}), sparkColor:COLORS.onco },
+    { id:'spark-pa', label:'Ophthal Avg Attendance', value:fmt(avg(opthalAtt.map(x=>x.attendees)),1), trend:'', sub:'Per Ophthal session', icon:'👁️', sparkData:mBuckets.map(b=>{const r=all.filter(x=>inBucket(x,b)&&x.therapy==='Opthal'&&x.attendees);return r.length?avg(r.map(x=>x.attendees)):null;}), sparkColor:COLORS.opthal },
   ];
 
   function renderGrid(elId, kpis) {
@@ -245,7 +255,7 @@ function renderKPIs() {
       sparkCharts[k.id] = new Chart(canvas,{
         type:'line',
         data:{
-          labels: mMonths.map(m=>m.slice(0,3)),
+          labels: mBuckets.map(b=>bucketLabel(b, sparkMulti)),
           datasets:[{data:cleanData, borderColor:k.sparkColor, backgroundColor:k.sparkColor+'22',
             borderWidth:1.5, pointRadius:0, tension:.4, fill:true, spanGaps:true}]
         },
@@ -306,7 +316,7 @@ function renderCharts() {
     options:{
       responsive:true, animation:{duration:500},
       interaction:{mode:'index',intersect:false},
-      onClick:(e,els)=>onChartClick(e,els,charts.chartWebTrend,labels),
+      onClick:(e,els)=>onChartClick(e,els,charts.chartWebTrend,md),
       plugins:{
         legend:{labels:{boxWidth:10,usePointStyle:true,font:{size:11},padding:16}},
         tooltip:{...tt, callbacks:{
@@ -346,7 +356,7 @@ function renderCharts() {
     options:{
       responsive:true, animation:{duration:500},
       interaction:{mode:'index',intersect:false},
-      onClick:(e,els)=>onChartClick(e,els,charts.chartAttTrend,labels),
+      onClick:(e,els)=>onChartClick(e,els,charts.chartAttTrend,md),
       plugins:{
         legend:{labels:{boxWidth:10,usePointStyle:true,font:{size:11},padding:16}},
         tooltip:{...tt}
@@ -377,7 +387,7 @@ function renderCharts() {
     options:{
       responsive:true, animation:{duration:500},
       interaction:{mode:'index',intersect:false},
-      onClick:(e,els)=>onChartClick(e,els,charts.chartMonthComp,labels),
+      onClick:(e,els)=>onChartClick(e,els,charts.chartMonthComp,md),
       plugins:{
         legend:{labels:{boxWidth:10,usePointStyle:true,font:{size:11},padding:14}},
         tooltip:{...tt}
@@ -412,7 +422,7 @@ function renderCharts() {
     options:{
       responsive:true, animation:{duration:500},
       interaction:{mode:'index',intersect:false},
-      onClick:(e,els)=>onChartClick(e,els,charts.chartEfficiency,labels),
+      onClick:(e,els)=>onChartClick(e,els,charts.chartEfficiency,md),
       plugins:{
         legend:{labels:{boxWidth:10,usePointStyle:true,font:{size:11},padding:14}},
         tooltip:{...tt, callbacks:{label: ctx=>`  ${ctx.dataset.label}: ${ctx.raw ?? '—'} attendees`}}

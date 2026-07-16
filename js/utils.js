@@ -59,6 +59,28 @@ function getSortedMonths(data) {
   return Object.keys(earliest).sort((a, b) => earliest[a] - earliest[b]);
 }
 
+// Chronological month+year buckets, e.g. [{key:'July 2026', month:'July', year:2026}].
+// Charts use these so the same month in different years is never merged into
+// one bar/point (July 2025 and July 2026 stay separate).
+function getMonthYearBuckets(data) {
+  const map = {};
+  data.forEach(d => {
+    const m = normalizeMonth(d.month);
+    const y = getYear(d);
+    if (!m || !y) return;
+    const key = m + ' ' + y;
+    if (!map[key]) {
+      map[key] = { key, month: m, year: y, sort: new Date(y, MONTH_FULL.indexOf(m), 1).getTime() };
+    }
+  });
+  return Object.values(map).sort((a, b) => a.sort - b.sort);
+}
+
+// Short axis label: "Jul" when the data covers a single year, "Jul '26" across years.
+function bucketLabel(b, multiYear) {
+  return multiYear ? `${b.month.slice(0, 3)} '${String(b.year).slice(2)}` : b.month.slice(0, 3);
+}
+
 const COLORS = {
   onco:'#003A8F', opthal:'#78BE20',
   oncoAlpha:'rgba(0,58,143,0.10)', opthalAlpha:'rgba(120,190,32,0.10)',
