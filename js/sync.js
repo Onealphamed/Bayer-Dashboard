@@ -55,9 +55,16 @@ function applySheetData(rows) {
   console.log('Header row', hdrIdx, '| cols No:'+iNo, 'T:'+iT, 'E:'+iE, 'M:'+iM, 'D:'+iD, 'R:'+iR, 'Y:'+iY, 'A:'+iA, 'K:'+iK);
   if (iT < 0) { console.warn('Therapy column not found — aborting sheet apply'); return 0; }
 
-  const isDataRow = r => iNo >= 0
-    ? /^\d+$/.test((r[iNo] || '').toString().trim())   // a real numbered row
-    : !!(r[iT] && r[iT].toString().trim());
+  // A row counts as data when it names a therapy AND has a date (or month).
+  // Deliberately NOT keyed off the "No" column: rows are often added without a
+  // serial number, and those events must still be counted.
+  const isDataRow = r => {
+    const t = (r[iT] || '').toString().trim();
+    if (!t || /^therapy/i.test(t)) return false;
+    const when = (iD >= 0 ? (r[iD] || '').toString().trim() : '')
+              || (iM >= 0 ? (r[iM] || '').toString().trim() : '');
+    return !!when;
+  };
 
   const parsed = rows
     .slice(hdrIdx + 1)
