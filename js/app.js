@@ -15,6 +15,7 @@ function switchTab(tab, btn) {
   document.getElementById('panel-'+tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'gallery') { renderGallery(); fetchCredentials(); }
+  if (tab === 'notes')   { fetchNotes(); }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

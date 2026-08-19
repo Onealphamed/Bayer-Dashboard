@@ -83,6 +83,7 @@
   <button class="tab-btn active" onclick="switchTab('exec',this)">📊 Executive Dashboard</button>
   <button class="tab-btn" onclick="switchTab('kol',this)">🎤 Speaker Intelligence</button>
   <button class="tab-btn" onclick="switchTab('gallery',this)">🖼 Speaker Gallery</button>
+  <button class="tab-btn" onclick="switchTab('notes',this)">🗒️ Notes</button>
 </nav>
 
 <!-- FILTERS -->
@@ -314,6 +315,22 @@
 
   </div><!-- /gallery -->
 
+  <!-- ═══════════ NOTES ═══════════ -->
+  <div class="tab-panel" id="panel-notes">
+    <div class="notes-toolbar">
+      <div class="notes-title-row">
+        <div class="notes-title">🗒️ Meeting Notes</div>
+        <div class="notes-count" id="notesCount"></div>
+      </div>
+      <div class="notes-filters" id="notesFilters">
+        <button class="filter-chip active" onclick="setNotesFilter('all',this)">All</button>
+        <button class="filter-chip" onclick="setNotesFilter('week',this)">Weekly</button>
+        <button class="filter-chip" onclick="setNotesFilter('month',this)">Monthly</button>
+        <button class="filter-chip" onclick="setNotesFilter('open',this)">Open</button>
+      </div>
+    </div>
+    <div class="notes-body" id="notesBody"></div>
+  </div><!-- /notes -->
 
 </div><!-- /main -->
 
@@ -328,6 +345,7 @@
 <script src="js/tab2-intelligence.js"></script>
 <script src="js/gallery-data.js"></script>
 <script src="js/tab3-gallery.js"></script>
+<script src="js/notes.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -393,3 +393,45 @@ html.dark .pw-divider{background:var(--blue)}
 .pw-btn:active{background:#001F4D}
 .pw-error{color:#DC2626;font-size:12px;margin-top:10px;font-weight:500;min-height:18px}
 .pw-footer{margin-top:32px;padding-top:20px;border-top:1px solid #F3F4F6;font-size:11px;color:#9CA3AF;letter-spacing:.3px}
+
+/* ═══════════ NOTES TAB ═══════════ */
+.notes-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.notes-title-row{display:flex;align-items:baseline;gap:12px}
+.notes-title{font-size:18px;font-weight:700;color:var(--text)}
+.notes-count{font-size:12px;color:var(--muted);font-weight:600}
+.notes-filters{display:flex;gap:8px;flex-wrap:wrap}
+.notes-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.note-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--muted);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.note-card.open{border-left-color:#D97706}
+.note-card.done{border-left-color:var(--green)}
+.note-card.na{border-left-color:var(--blue)}
+.note-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.note-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:20px;background:var(--blue-pale);color:var(--blue)}
+.note-type.monthly{background:#EDE9FE;color:#6D28D9}
+.note-type.weekly{background:var(--blue-pale);color:var(--blue)}
+.note-type.other{background:#F1F5F9;color:var(--muted)}
+.note-date{font-size:11px;color:var(--muted);font-weight:600}
+.note-status{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 9px;border-radius:20px;background:#F1F5F9;color:var(--muted)}
+.note-status.open{background:#FEF3C7;color:#B45309}
+.note-status.done{background:var(--green-light);color:#3F6212}
+.note-point{font-size:14px;line-height:1.5;color:var(--text)}
+.note-owner{font-size:12px;color:var(--muted);font-weight:600}
+.notes-empty{grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);font-size:14px}
+.notes-setup{grid-column:1/-1;max-width:640px;margin:8px auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;box-shadow:var(--shadow)}
+.notes-setup-icon{font-size:34px;text-align:center}
+.notes-setup h3{margin:6px 0 14px;font-size:18px;color:var(--text);text-align:center}
+.notes-setup p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.notes-setup ol{margin:10px 0 0;padding-left:20px;font-size:13px;color:var(--text);line-height:1.9}
+.notes-setup-cols{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.notes-setup-cols span{font-size:12px;font-weight:700;background:var(--blue-pale);color:var(--blue);padding:5px 12px;border-radius:6px}
+.notes-setup-preview{margin-top:22px;border-top:1px dashed var(--border);padding-top:18px}
+.notes-setup-preview-lbl{font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+html.dark .note-card{background:var(--card);border-color:var(--border)}
+html.dark .note-type.weekly{background:#152238;color:#60A5FA}
+html.dark .note-type.monthly{background:#241A3A;color:#C4B5FD}
+html.dark .note-type.other{background:#1A2535;color:var(--muted)}
+html.dark .note-status{background:#1A2535;color:var(--muted)}
+html.dark .note-status.open{background:#2A2010;color:#FBC88A}
+html.dark .note-status.done{background:#152B15;color:#86EFAC}
+html.dark .notes-setup,html.dark .notes-setup-cols span{background:var(--card)}
+html.dark .notes-setup-cols span{background:#152238;color:#60A5FA}
