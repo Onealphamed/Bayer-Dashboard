@@ -1,10 +1,8 @@
 // NOTES MODULE
 // Meeting notes / action points, read live from a "Notes" tab in the Bayer
-// spreadsheet. Columns (header row, any order): Date | Type | Point | Owner | Status.
-//
-// SETUP: once the "Notes" tab is published to web (File → Share → Publish to
-// web → Notes → CSV), put its gid below. The gid is the number in that URL.
-const NOTES_GID = ''; // <-- fill in with the published "Notes" tab gid
+// spreadsheet. Columns are matched by header name (any order) — all optional:
+//   Point/Actionable/Note · Date · Owner · Timeline/Due · Type · Status
+const NOTES_GID = '1012051985';
 const NOTES_CSV_URL = NOTES_GID
   ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vTZmHF8skx5_YbEUvccXG0l8_D8XelTNGV2RNauRsjJno__T2sQFBq_vv0VvyboREoi6sSJLwmNZKvi/pub?gid=${NOTES_GID}&single=true&output=csv`
   : '';
@@ -51,25 +49,48 @@ function parseNotes(text) {
   const rows = parseCSV(text);
   if (!rows.length) return [];
   const norm = s => (s || '').toString().trim().toLowerCase();
-  let hi = rows.findIndex(r => r.some(c => { const n = norm(c); return n === 'point' || n.includes('point') || n.includes('note') || n.includes('discussion'); }));
+  // Find the header row (contains a "point"-like or "actionable" column).
+  let hi = rows.findIndex(r => r.some(c => {
+    const n = norm(c);
+    return n === 'point' || n.includes('point') || n.includes('action') || n.includes('note') || n.includes('discussion');
+  }));
   if (hi < 0) hi = 0;
   const hdr = rows[hi].map(norm);
   const col = (...preds) => { for (const p of preds) { const i = hdr.findIndex(p); if (i >= 0) return i; } return -1; };
+  const iPoint = col(h => h === 'point' || h.includes('point') || h.includes('action') || h.includes('note') || h.includes('discussion') || h.includes('minute'));
   const iDate  = col(h => h.includes('date'));
-  const iType  = col(h => h.includes('type') || h.includes('meeting') || h.includes('freq'));
-  const iPoint = col(h => h === 'point' || h.includes('point') || h.includes('note') || h.includes('discussion') || h.includes('action') || h.includes('minute'));
   const iOwner = col(h => h.includes('owner') || h.includes('respons') || h.includes('assign') || h === 'by');
+  const iTime  = col(h => h.includes('timeline') || h.includes('deadline') || h.includes('due') || h.includes('eta') || h.includes('target'));
+  const iType  = col(h => h.includes('type') || h.includes('meeting') || h.includes('freq'));
   const iStat  = col(h => h.includes('status') || h.includes('state'));
 
+  const get = (r, i) => i >= 0 ? (r[i] || '').toString().trim() : '';
   return rows.slice(hi + 1)
     .map(r => ({
-      date:   iDate  >= 0 ? (r[iDate]  || '').toString().trim() : '',
-      type:   iType  >= 0 ? (r[iType]  || '').toString().trim() : '',
-      point:  iPoint >= 0 ? (r[iPoint] || '').toString().trim() : '',
-      owner:  iOwner >= 0 ? (r[iOwner] || '').toString().trim() : '',
-      status: iStat  >= 0 ? (r[iStat]  || '').toString().trim() : '',
+      point:    get(r, iPoint),
+      date:     get(r, iDate),
+      owner:    get(r, iOwner),
+      timeline: get(r, iTime),
+      type:     get(r, iType),
+      status:   get(r, iStat),
     }))
     .filter(n => n.point);
+}
+
+function buildNotesFilters() {
+  const bar = document.getElementById('notesFilters');
+  if (!bar) return;
+  const hasType   = notesData.some(n => n.type);
+  const hasStatus = notesData.some(n => n.status);
+  const chips = [['all', 'All']];
+  if (hasType)   chips.push(['week', 'Weekly'], ['month', 'Monthly']);
+  if (hasStatus) chips.push(['open', 'Open']);
+  if (chips.length === 1) { bar.style.display = 'none'; return; }   // nothing worth filtering
+  if (!chips.some(c => c[0] === notesFilter)) notesFilter = 'all';
+  bar.style.display = '';
+  bar.innerHTML = chips.map(c =>
+    `<button class="filter-chip${c[0] === notesFilter ? ' active' : ''}" onclick="setNotesFilter('${c[0]}')">${c[1]}</button>`
+  ).join('');
 }
 
 function renderNotes() {
@@ -77,6 +98,12 @@ function renderNotes() {
   if (!host) return;
   const cnt = document.getElementById('notesCount');
   if (cnt) cnt.textContent = `${notesData.length} note${notesData.length !== 1 ? 's' : ''}`;
+  buildNotesFilters();
+
+  if (!notesData.length) {
+    host.innerHTML = '<div class="notes-empty">No meeting notes yet — add rows to the <b>Notes</b> tab (Actionable · Date · Owner · Timeline) and they\'ll appear here within a few minutes.</div>';
+    return;
+  }
 
   const sorted = [...notesData].sort((a, b) => noteSortVal(b) - noteSortVal(a));
   const f = notesFilter;
@@ -92,51 +119,31 @@ function renderNotes() {
 }
 
 function noteCardHTML(n) {
-  const t   = (n.type || '').toLowerCase();
-  const tc  = t.startsWith('month') ? 'monthly' : (t.startsWith('week') ? 'weekly' : 'other');
-  const sc  = statusClass(n.status);
+  const t  = (n.type || '').toLowerCase();
+  const tc = t.startsWith('month') ? 'monthly' : (t.startsWith('week') ? 'weekly' : 'other');
+  const sc = statusClass(n.status);
+  const head = [
+    n.type   ? `<span class="note-type ${tc}">${esc(n.type)}</span>` : '',
+    n.date   ? `<span class="note-date">${esc(fmtNoteDate(n.date))}</span>` : '',
+    n.status ? `<span class="note-status ${sc}">${esc(n.status)}</span>` : '',
+  ].join('');
+  const foot = [
+    n.owner    ? `<span class="note-owner">👤 ${esc(n.owner)}</span>` : '',
+    n.timeline ? `<span class="note-timeline">⏳ ${esc(n.timeline)}</span>` : '',
+  ].join('');
   return `<div class="note-card ${sc}">
-    <div class="note-head">
-      <span class="note-type ${tc}">${esc(n.type || 'Note')}</span>
-      <span class="note-date">${esc(fmtNoteDate(n.date))}</span>
-      ${n.status ? `<span class="note-status ${sc}">${esc(n.status)}</span>` : ''}
-    </div>
+    ${head ? `<div class="note-head">${head}</div>` : ''}
     <div class="note-point">${esc(n.point).replace(/\n/g, '<br>')}</div>
-    ${n.owner ? `<div class="note-owner">👤 ${esc(n.owner)}</div>` : ''}
+    ${foot ? `<div class="note-foot">${foot}</div>` : ''}
   </div>`;
 }
 
-function setNotesFilter(f, btn) {
-  notesFilter = f;
-  document.querySelectorAll('#notesFilters .filter-chip').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderNotes();
-}
+function setNotesFilter(f) { notesFilter = f; renderNotes(); }
 
 function renderNotesSetup(host) {
   host.innerHTML = `<div class="notes-setup">
     <div class="notes-setup-icon">🗒️</div>
     <h3>Meeting Notes — quick one-time setup</h3>
-    <p>Add a tab named <b>Notes</b> to your Bayer spreadsheet with these column headers in row 1:</p>
-    <div class="notes-setup-cols"><span>Date</span><span>Type</span><span>Point</span><span>Owner</span><span>Status</span></div>
-    <ol>
-      <li>In the Bayer sheet, create a new tab called <b>Notes</b>.</li>
-      <li>Row&nbsp;1 headers: <b>Date · Type · Point · Owner · Status</b> &nbsp;(Type = Weekly / Monthly · Status = Open / Done).</li>
-      <li>Add your weekly &amp; monthly meeting points as rows.</li>
-      <li>File → Share → <b>Publish to web</b> → select the <b>Notes</b> tab → <b>CSV</b> → Publish.</li>
-      <li>Send me the published link and I'll switch this on.</li>
-    </ol>
-    <div class="notes-setup-preview">
-      <div class="notes-setup-preview-lbl">This is how each note will look:</div>
-      <div class="note-card open">
-        <div class="note-head">
-          <span class="note-type weekly">Weekly</span>
-          <span class="note-date">16 Jul 2026</span>
-          <span class="note-status open">Open</span>
-        </div>
-        <div class="note-point">Follow up with KOLs on pending July webinar reports.</div>
-        <div class="note-owner">👤 Linda</div>
-      </div>
-    </div>
+    <p>Add a tab named <b>Notes</b> to your Bayer spreadsheet, give it column headers, then publish it (File → Share → Publish to web → Notes → CSV) and send me the link.</p>
   </div>`;
 }
