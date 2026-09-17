@@ -250,12 +250,15 @@ table{border-collapse:collapse;width:100%}
 .phase-open-link:hover{background:var(--accent-soft)}
 
 /* ---------- module table ------------------------------------------------- */
+.mod-scroll{overflow-x:auto}
 .mod-table{width:100%;table-layout:fixed}
 .mod-table thead th{
   font-size:9.5px;font-weight:750;letter-spacing:.085em;text-transform:uppercase;
   color:var(--ink-4);text-align:left;padding:10px 14px 9px;
   border-bottom:1px solid var(--line);background:#fff;vertical-align:bottom;white-space:nowrap;
 }
+.mod-table thead th.col-x{white-space:normal;line-height:1.3}
+.mod-table td{overflow-wrap:anywhere}
 .mod-table tbody td{
   padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle;
 }
@@ -293,8 +296,8 @@ table{border-collapse:collapse;width:100%}
 /* ---------- mini gantt track -------------------------------------------- */
 .tl-head{display:flex;gap:3px;margin-top:6px}
 .tl-head span{
-  flex:1;text-align:center;font-size:9.5px;font-weight:600;color:var(--ink-4);
-  letter-spacing:.02em;overflow:hidden;
+  flex:1;min-width:0;text-align:center;font-size:9px;font-weight:600;color:var(--ink-4);
+  letter-spacing:0;overflow:hidden;white-space:nowrap;
 }
 .tl-head span.now{color:var(--accent);font-weight:750}
 .tl{position:relative;height:12px}
@@ -429,7 +432,7 @@ table{border-collapse:collapse;width:100%}
 .f-count{font-size:11.5px;color:var(--ink-4);font-weight:500;margin-left:auto}
 
 /* ---------- risk heatmap ------------------------------------------------- */
-.heat{display:grid;grid-template-columns:78px repeat(4,1fr);gap:4px;font-size:10.5px}
+.heat{display:grid;grid-template-columns:78px repeat(4,minmax(0,1fr));gap:4px;font-size:10.5px}
 .heat-lbl{
   display:flex;align-items:center;justify-content:flex-end;padding-right:8px;
   font-size:10px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;
@@ -481,6 +484,11 @@ table{border-collapse:collapse;width:100%}
 .w-val{font-size:23px;font-weight:700;letter-spacing:-.8px;line-height:1.1}
 .w-delta{font-size:11px;font-weight:650;margin-top:2px}
 .w-canvas{position:relative;height:92px;margin-top:auto}
+.chart-fallback{
+  display:flex;align-items:center;justify-content:center;height:100%;
+  border:1px dashed var(--line);border-radius:var(--radius-sm);
+  background:#fafbfc;color:var(--ink-4);font-size:11.5px;text-align:center;padding:14px;line-height:1.5;
+}
 .w-foot{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2)}
 .w-foot div{display:flex;flex-direction:column;gap:1px}
 .w-foot .l{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
@@ -590,10 +598,12 @@ table{border-collapse:collapse;width:100%}
   .tb-burger:hover{background:var(--idle-bg)}
   .tb-meta{display:none}
   .page{padding:16px 14px 50px}
-  .g2,.g3,.g4,.g6{grid-template-columns:1fr}
+  .g2,.g3,.g4,.g6{grid-template-columns:minmax(0,1fr)}
   .psum{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .col-time,.col-win{display:none}
-  .mod-table{table-layout:auto}
+  .mod-table{min-width:780px}
+  .psum > div{border-left:none;border-top:1px solid var(--line-2)}
+  .heat-cell{min-height:48px}
+  .heat-cell b{font-size:15px}
 }
 
 /* ---------- print -------------------------------------------------------- */

@@ -214,10 +214,15 @@
     // Fixed table layout: widths must total 100, so the base columns give ground
     // proportionally as phase-specific extra columns are added.
     var W = extra.length
-      ? { mod: 15, prog: 11, time: 16, win: 11, own: 9, stat: 16 }
+      ? { mod: 15, prog: 11, time: 18, win: 11, own: 9, stat: 15 }
       : { mod: 20, prog: 15, time: 22, win: 13, own: 11, stat: 19 };
     var extraW = extra.length
       ? (100 - (W.mod + W.prog + W.time + W.win + W.own + W.stat)) / extra.length : 0;
+    // With phase-specific columns the table needs real width for the 12-month
+    // track and the extra cells; the wrapper scrolls rather than squashing them.
+    var tableCls = extra.length ? 'mod-table has-extra' : 'mod-table';
+    var tableStyle = extra.length
+      ? ' style="min-width:' + (1180 + extra.length * 110) + 'px"' : '';
 
     var head =
       '<div class="phase-bar" data-toggle="' + esc(ph.id) + '">' +
@@ -242,7 +247,8 @@
         '<th class="col-win" style="width:' + W.win + '%">Window</th>' +
         '<th class="col-own" style="width:' + W.own + '%">Owners</th>' +
         extra.map(function (x) {
-          return '<th style="width:' + extraW.toFixed(2) + '%">' + esc(x.label) + '</th>';
+          return '<th class="col-x" style="width:' + extraW.toFixed(2) + '%">' +
+            esc(x.label) + '</th>';
         }).join('') +
         '<th class="col-stat" style="width:' + W.stat + '%">Task Status</th>' +
       '</tr></thead>';
@@ -272,8 +278,9 @@
 
     return '<div class="phase-block h-' + esc(ph.health || 'green') + '" id="pb-' + esc(ph.id) + '">' +
       head +
-      '<div class="phase-body"><table class="mod-table">' + thead +
-        '<tbody>' + rows + '</tbody></table></div>' +
+      '<div class="phase-body"><div class="mod-scroll"><table class="' + tableCls + '"' +
+        tableStyle + '>' + thead +
+        '<tbody>' + rows + '</tbody></table></div></div>' +
     '</div>';
   };
 
@@ -406,7 +413,19 @@
   var _charts = {};
   UI.drawChart = function (id, cfg) {
     var el = document.getElementById(id);
-    if (!el || typeof Chart === 'undefined') return;
+    if (!el) return;
+    if (typeof Chart === 'undefined') {
+      // Chart.js is served from a CDN; if it cannot be reached, show the
+      // underlying numbers rather than an empty box.
+      var host = el.parentNode;
+      if (host && !host.querySelector('.chart-fallback')) {
+        host.innerHTML = '<div class="chart-fallback">Chart library unavailable offline.' +
+          '<br/>Open \u201cView as table\u201d below for the underlying figures.</div>';
+      }
+      var details = host && host.parentNode && host.parentNode.querySelector('details');
+      if (details) details.open = true;
+      return;
+    }
     if (_charts[id]) _charts[id].destroy();
     _charts[id] = new Chart(el.getContext('2d'), cfg);
   };

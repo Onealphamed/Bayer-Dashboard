@@ -116,7 +116,7 @@
       grid[k] = (grid[k] || 0) + 1;
     });
 
-    var html = '<div class="heat" style="grid-template-columns:78px repeat(3,1fr)">' +
+    var html = '<div class="heat" style="grid-template-columns:78px repeat(3,minmax(0,1fr))">' +
       '<div></div>' + PROBS.map(function (p) {
         return '<div class="heat-col">' + p + ' prob.</div>';
       }).join('');

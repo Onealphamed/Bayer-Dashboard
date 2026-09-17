@@ -80,7 +80,7 @@
           '<span class="tb-kv-v">' + esc(PMO.fmtDate(p.asOf)) + '</span></div>' +
         UI.healthPill(PMO.health.state) +
         '<button class="phase-open-link" id="print-btn" title="Print or export this page as PDF">' +
-          'Print \u2317</button>' +
+          'Print</button>' +
       '</div>' +
     '</header>';
   }
