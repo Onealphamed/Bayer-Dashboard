@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Digital Marketing Growth Plan — Howrah Bridge PMO Dashboard</title>
+<meta name="description" content="Enterprise PMO dashboard for the Howrah Bridge Cloud Kitchen &amp; Catering 12-month digital marketing transformation programme: phases, modules, Gantt, deliverables, risks and KPIs."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/pmo.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="empty-state" style="padding:80px">Loading programme data…</div>
+
+<!-- core runtime (must load before any data file) -->
+<script src="js/pmo-core.js"></script>
+
+<!-- programme dataset -->
+<script src="js/data/program.js"></script>
+<script src="js/data/intel.js"></script>
+<script src="js/data/library.js"></script>
+<script src="js/data/phase-1.js"></script>
+<script src="js/data/phase-2.js"></script>
+<script src="js/data/phase-3.js"></script>
+<script src="js/data/phase-4.js"></script>
+<script src="js/data/phase-5.js"></script>
+<script src="js/data/phase-6.js"></script>
+<script src="js/data/phase-7.js"></script>
+<script src="js/data/phase-8.js"></script>
+<script src="js/data/phase-9.js"></script>
+
+<!-- components + views -->
+<script src="js/pmo-ui.js"></script>
+<script src="js/pmo-gantt.js"></script>
+<script src="js/view-home.js"></script>
+<script src="js/view-phase.js"></script>
+<script src="js/view-gantt.js"></script>
+<script src="js/view-kpi.js"></script>
+<script src="js/view-trackers.js"></script>
+<script src="js/view-intel.js"></script>
+
+<!-- app shell + router (boots last) -->
+<script src="js/pmo-app.js"></script>
+</body>
+</html>
