@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Master Dashboard</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/portal.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <div class="brand-title" id="portal-title">Master Dashboard</div>
+        <div class="brand-sub">All your dashboards in one place</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <label class="search">
+      <span class="sr-only">Search dashboards</span>
+      <input id="search" type="search" placeholder="Search dashboards" autocomplete="off" spellcheck="false">
+      <kbd aria-hidden="true">/</kbd>
+    </label>
+    <button class="btn btn-primary" id="add-btn" type="button" hidden>
+      <span aria-hidden="true">+</span><span class="add-label">Add dashboard</span>
+    </button>
+    <div class="user-menu">
+      <button class="user-btn" id="user-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu">
+        <span class="avatar-sm" id="user-initials" aria-hidden="true">··</span>
+        <span class="uname" id="user-name">Account</span>
+        <span aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="menu" id="user-menu" role="menu" hidden>
+        <div class="menu-head"><b id="menu-user">Signed in</b><span id="menu-role"></span></div>
+        <button type="button" role="menuitem" data-action="activity" class="admin-only" hidden>Activity log</button>
+        <button type="button" role="menuitem" data-action="backup" class="admin-only" hidden>Download backup (no passwords)</button>
+        <button type="button" role="menuitem" data-action="export-secrets" class="admin-only" hidden>Export full config (with passwords)</button>
+        <button type="button" role="menuitem" data-action="storage-help" class="admin-only" hidden>Storage &amp; setup help</button>
+        <hr class="admin-only" hidden>
+        <button type="button" role="menuitem" data-action="logout" class="danger">Sign out</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main" id="main">
+  <div id="notices"></div>
+  <div class="summary">
+    <h1>All dashboards</h1>
+    <span class="meta" id="summary-meta" aria-live="polite">Loading&hellip;</span>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Filter by category" hidden></div>
+  <div class="grid" id="grid" aria-busy="true">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+  <p class="foot" id="foot"></p>
+</main>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script src="/assets/app.js" defer></script>
+</body>
+</html>

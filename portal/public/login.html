@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sign in — Master Dashboard</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/portal.css">
+</head>
+<body class="login-page">
+<main class="login-card">
+  <div class="login-head">
+    <div class="mark mark-lg" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <h1 id="portal-title">Master Dashboard</h1>
+    <p>Sign in to open all of your dashboards in one place.</p>
+  </div>
+
+  <div class="form-alert" id="login-error" role="alert" hidden></div>
+
+  <form id="login-form" method="post" action="/api/login" novalidate>
+    <input type="hidden" name="next" id="next" value="/">
+    <div class="field">
+      <label for="username">Login ID</label>
+      <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none"
+             spellcheck="false" required maxlength="200">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <div class="input-wrap">
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="500">
+        <button type="button" class="reveal-toggle" id="toggle-password" aria-controls="password" aria-pressed="false">Show</button>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" id="submit">Sign in</button>
+  </form>
+
+  <div class="login-foot">
+    <span aria-hidden="true">&#128274;</span>
+    <span>Private area. Sessions expire automatically; repeated failed attempts are locked out.</span>
+  </div>
+</main>
+<script src="/assets/login.js" defer></script>
+</body>
+</html>
