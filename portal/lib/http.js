@@ -4,7 +4,11 @@
  * convenience for page loads, never the only line of defence.
  */
 import { getConfig } from './config.js';
-import { getSession } from './session.js';
+import { HttpError } from './errors.js';
+import { clearSessionCookie, getSession } from './session.js';
+import { isRevoked } from './store.js';
+
+export { HttpError };
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -12,14 +16,6 @@ const BASE_HEADERS = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
 };
-
-export class HttpError extends Error {
-  constructor(status, message, extra) {
-    super(message);
-    this.status = status;
-    this.extra = extra || null;
-  }
-}
 
 export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -30,9 +26,9 @@ export function json(data, status = 200, headers = {}) {
 
 export function errorResponse(err) {
   if (err instanceof HttpError) {
-    return json({ error: err.message, ...(err.extra || {}) }, err.status,
-      err.status === 429 && err.extra && err.extra.retryAfter
-        ? { 'Retry-After': String(err.extra.retryAfter) } : {});
+    const headers = { ...(err.headers || {}) };
+    if (err.status === 429 && err.extra && err.extra.retryAfter) headers['Retry-After'] = String(err.extra.retryAfter);
+    return json({ error: err.message, ...(err.extra || {}) }, err.status, headers);
   }
   // Never leak internals; the detail goes to the platform log.
   console.error('[portal] unhandled error:', err && err.stack ? err.stack : err);
@@ -85,20 +81,27 @@ export function assertSameOrigin(request) {
   if (!hosts.has(originHost)) throw new HttpError(403, 'Cross-site request blocked.');
 }
 
-export async function readJson(request) {
+export async function readJson(request, { maxBytes = MAX_BODY_BYTES } = {}) {
   const type = (request.headers.get('content-type') || '').toLowerCase();
   if (!type.startsWith('application/json')) {
     throw new HttpError(415, 'Expected a JSON request body.');
   }
   const len = parseInt(request.headers.get('content-length') || '0', 10);
-  if (len > MAX_BODY_BYTES) throw new HttpError(413, 'Request body too large.');
+  if (len > maxBytes) throw new HttpError(413, 'Request body too large.');
   const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) throw new HttpError(413, 'Request body too large.');
+  if (text.length > maxBytes) throw new HttpError(413, 'Request body too large.');
+  let body;
   try {
-    return text ? JSON.parse(text) : {};
+    body = text ? JSON.parse(text) : {};
   } catch {
     throw new HttpError(400, 'Malformed JSON.');
   }
+  // Every endpoint takes an object; `null`, arrays and bare values are refused
+  // here so handlers can read fields without a type check of their own.
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new HttpError(400, 'Expected a JSON object.');
+  }
+  return body;
 }
 
 /**
@@ -114,15 +117,25 @@ export function assertNotCrossSite(request) {
   }
 }
 
-export async function requireSession(request, cfg = getConfig()) {
+/**
+ * The signed-in user, or a 401. A session that was signed out (or ended by
+ * "sign out everywhere") is refused and its cookie cleared, so the browser
+ * lands cleanly on the sign-in page instead of looping. `strict` makes a
+ * storage outage fail closed: used for revealing and exporting passwords.
+ */
+export async function requireSession(request, cfg = getConfig(), { strict = false } = {}) {
   assertNotCrossSite(request);
   const session = await getSession(request, cfg);
   if (!session) throw new HttpError(401, 'Not signed in.');
+  if (await isRevoked(cfg, session, { strict })) {
+    throw new HttpError(401, 'Your session has ended. Please sign in again.', { signedOut: true },
+      { 'Set-Cookie': clearSessionCookie(request) });
+  }
   return session;
 }
 
-export async function requireAdmin(request, cfg = getConfig()) {
-  const session = await requireSession(request, cfg);
+export async function requireAdmin(request, cfg = getConfig(), opts) {
+  const session = await requireSession(request, cfg, opts);
   if (session.role !== 'admin') throw new HttpError(403, 'Only an admin can do that.');
   return session;
 }

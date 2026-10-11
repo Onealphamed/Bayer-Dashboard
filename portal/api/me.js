@@ -15,7 +15,7 @@ export const GET = handle(async (request) => {
     user: { username: session.username, role: session.role },
     sessionExpiresAt: new Date(session.exp * 1000).toISOString(),
     portal: { title: cfg.title },
-    storage: { mode, writable: mode === 'redis' },
+    storage: { mode, writable: mode === 'redis', canRevokeSessions: mode === 'redis' },
     canEdit: isAdmin,
     warnings: isAdmin ? configWarnings(cfg) : [],
   });

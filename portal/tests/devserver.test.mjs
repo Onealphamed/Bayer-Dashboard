@@ -60,9 +60,11 @@ describe('dev server (local Vercel emulator)', () => {
   it('signed out: pages redirect to /login, APIs 401, login page is served with security headers', async () => {
     const root = await get('/');
     assert.equal(root.status, 302);
-    assert.equal(new URL(root.headers.get('location')).pathname, '/login');
+    assert.equal(root.headers.get('location'), '/login', 'middleware redirects are relative');
+    assert.equal(new URL(root.headers.get('location'), 'http://x').pathname, '/login');
     const deep = await get('/some/page?x=1');
-    assert.equal(new URL(deep.headers.get('location')).searchParams.get('next'), '/some/page?x=1');
+    assert.ok(deep.headers.get('location').startsWith('/login?'), 'relative deep-link redirect');
+    assert.equal(new URL(deep.headers.get('location'), 'http://x').searchParams.get('next'), '/some/page?x=1');
     assert.equal((await get('/api/dashboards')).status, 401);
     assert.equal((await get('/assets/app.js')).status, 302);
 
@@ -96,7 +98,7 @@ describe('dev server (local Vercel emulator)', () => {
     assert.equal((await get('/assets/app.js', { headers: { cookie } })).status, 200);
     const bounce = await get('/login', { headers: { cookie } });
     assert.equal(bounce.status, 302);
-    assert.equal(new URL(bounce.headers.get('location')).pathname, '/');
+    assert.equal(bounce.headers.get('location'), '/', 'signed-in /login bounces with a relative redirect');
 
     const list = await get('/api/dashboards', { headers: { cookie } });
     assert.equal(list.status, 200);

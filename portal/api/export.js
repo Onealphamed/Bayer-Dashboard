@@ -11,14 +11,14 @@ import { audit, loadDashboards } from '../lib/store.js';
 export const GET = handle(async (request) => {
   assertSameOrigin(request);
   const cfg = getConfig();
-  const session = await requireAdmin(request, cfg);
+  const session = await requireAdmin(request, cfg, { strict: true });
   const includeSecrets = new URL(request.url).searchParams.get('secrets') === '1';
   const state = await loadDashboards(cfg);
-  const entries = await toSeedEntries(state.items, cfg.vaultKey, { includeSecrets });
+  const { entries, unreadable } = await toSeedEntries(state.items, cfg.vaultKey, { includeSecrets });
   await audit(cfg, {
     type: includeSecrets ? 'export_secrets' : 'export', user: session.username, ip: clientIp(request),
   });
-  return json({ includesPasswords: includeSecrets, count: entries.length, dashboards: entries });
+  return json({ includesPasswords: includeSecrets, count: entries.length, dashboards: entries, unreadable });
 });
 
 export const POST = methodNotAllowed(['GET']);

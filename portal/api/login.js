@@ -13,20 +13,28 @@ const WINDOW_SEC = 15 * 60;
 const MAX_FAILS_PER_IP = 10;
 const MAX_FAILS_PER_USER = 20;
 
-/** Only same-site relative paths, so `next` can never become an open redirect. */
+/**
+ * Only same-site relative paths, so `next` can never become an open redirect.
+ * The checks run on the NORMALISED path: URL parsing collapses dot segments,
+ * so a raw value like '/..//evil.com' would otherwise become '//evil.com', a
+ * protocol-relative URL that browsers send off-site.
+ */
 export function safeNext(value) {
   if (typeof value !== 'string') return '/';
   const v = value.trim();
-  if (!v.startsWith('/') || v.startsWith('//') || v.startsWith('/\\') || v.includes('\\')) return '/';
-  if (/[\u0000-\u001f]/.test(v)) return '/';
+  if (!v.startsWith('/') || v.startsWith('//') || v.includes('\\')) return '/';
+  if (/[\u0000-\u001f\u007f]/.test(v)) return '/';
+  let u;
   try {
-    const u = new URL(v, 'https://portal.invalid');
-    if (u.origin !== 'https://portal.invalid') return '/';
-    if (u.pathname === '/login' || u.pathname.startsWith('/api/')) return '/';
-    return u.pathname + u.search + u.hash;
+    u = new URL(v, 'https://portal.invalid');
   } catch {
     return '/';
   }
+  if (u.origin !== 'https://portal.invalid') return '/';
+  const out = u.pathname + u.search + u.hash;
+  if (!out.startsWith('/') || out.startsWith('//') || out.includes('\\')) return '/';
+  if (u.pathname === '/login' || u.pathname === '/login.html' || u.pathname.startsWith('/api/')) return '/';
+  return out;
 }
 
 async function readCredentials(request) {

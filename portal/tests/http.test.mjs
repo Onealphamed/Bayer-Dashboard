@@ -78,6 +78,18 @@ describe('lib/http.js and request hardening', () => {
       await assert.rejects(readJson(jr(JSON.stringify({ x: 'a'.repeat(70 * 1024) }))), (e) => e.status === 413);
       assert.ok(await readJson(jr(JSON.stringify({ x: 'a'.repeat(60 * 1024) }))));
     });
+
+    it('maxBytes raises or lowers the cap for one endpoint', async () => {
+      const body = JSON.stringify({ x: 'a'.repeat(100 * 1024) });
+      assert.ok(await readJson(jr(body), { maxBytes: 256 * 1024 }));
+      await assert.rejects(readJson(jr('{"a":1}'), { maxBytes: 4 }), (e) => e.status === 413);
+    });
+
+    it('400 for JSON that is not an object', async () => {
+      for (const text of ['null', '[]', '[1]', '"s"', '0', 'false']) {
+        await assert.rejects(readJson(jr(text)), (e) => e.status === 400 && e.message === 'Expected a JSON object.', text);
+      }
+    });
   });
 
   describe('helpers', () => {
@@ -190,10 +202,16 @@ describe('lib/http.js and request hardening', () => {
     it('oversized and malformed bodies', async (t) => {
       env(t, baseEnv({ DASHBOARDS: JSON.stringify(SEED) }));
       const admin = await signIn(ADMIN);
+      // Mutations may carry an env-mode draft, so their cap is 256 KiB, not 64.
       const big = await call(dashboards.POST, req('/api/dashboards', {
-        method: 'POST', cookie: admin, json: { name: 'x', url: 'https://x.example', notes: 'n'.repeat(70 * 1024) },
+        method: 'POST', cookie: admin, json: { name: 'x', url: 'https://x.example', notes: 'n'.repeat(260 * 1024) },
       }));
       assert.equal(big.status, 413);
+      const longNotes = await call(dashboards.POST, req('/api/dashboards', {
+        method: 'POST', cookie: admin, json: { name: 'x', url: 'https://x.example', notes: 'n'.repeat(70 * 1024) },
+      }));
+      assert.equal(longNotes.status, 400);
+      assert.equal(longNotes.data.field, 'Notes');
       const bad = await call(dashboards.POST, req('/api/dashboards', {
         method: 'POST', cookie: admin, body: '{"name":', headers: { 'content-type': 'application/json' },
       }));

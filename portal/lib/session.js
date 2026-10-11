@@ -2,14 +2,16 @@
  * Stateless signed sessions.
  *
  * Token:  v1.<base64url(payload JSON)>.<base64url(HMAC-SHA256)>
- * Payload: { u: username, r: role, pv: password-version, iat, exp }
+ * Payload: { u: username, r: role, pv: password-version, sid, ms, iat, exp }
+ *   sid  random session id, so one session can be signed out server-side
+ *   ms   issue time in milliseconds, compared against "sign out everywhere"
  *
  * `pv` is a MAC over the user's current password, so changing a password (or
  * removing a user) in the environment invalidates every session for that user
  * on the next request — no server-side session store needed.
  */
 import { getConfig } from './config.js';
-import { b64urlDecode, b64urlEncode, fromUtf8, hmacSign, hmacVerify, utf8 } from './crypto.js';
+import { b64urlDecode, b64urlEncode, fromUtf8, hmacSign, hmacVerify, randomId, utf8 } from './crypto.js';
 
 export const COOKIE_NAME = 'portal_session';
 
@@ -35,11 +37,14 @@ export function findUser(cfg, username) {
 
 export async function createSessionToken(user, cfg = getConfig()) {
   const secret = signingSecret(cfg);
-  const now = Math.floor(Date.now() / 1000);
+  const nowMs = Date.now();
+  const now = Math.floor(nowMs / 1000);
   const payload = {
     u: user.username,
     r: user.role,
     pv: await passwordVersion(secret, user),
+    sid: randomId(),
+    ms: nowMs,
     iat: now,
     exp: now + cfg.sessionTtlHours * 3600,
   };
@@ -48,7 +53,7 @@ export async function createSessionToken(user, cfg = getConfig()) {
   return { token: body + '.' + sig, maxAge: payload.exp - now };
 }
 
-/** Returns { username, role, exp } for a valid token, otherwise null. */
+/** Returns { username, role, exp, iat, issuedMs, sid } for a valid token, otherwise null. */
 export async function verifySessionToken(token, cfg = getConfig()) {
   if (typeof token !== 'string' || token.length > 2048) return null;
   const parts = token.split('.');
@@ -83,7 +88,14 @@ export async function verifySessionToken(token, cfg = getConfig()) {
 
   // Role always comes from current config, never from the token, so a
   // demotion takes effect immediately.
-  return { username: user.username, role: user.role, exp: payload.exp };
+  return {
+    username: user.username,
+    role: user.role,
+    exp: payload.exp,
+    iat: payload.iat,
+    issuedMs: typeof payload.ms === 'number' ? payload.ms : payload.iat * 1000,
+    sid: typeof payload.sid === 'string' ? payload.sid : null,
+  };
 }
 
 export function parseCookies(header) {

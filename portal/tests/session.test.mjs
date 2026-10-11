@@ -37,19 +37,30 @@ describe('lib/session.js', () => {
       assert.match(token, /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
       assert.equal(maxAge, 12 * 3600);
       const s = await verifySessionToken(token, cfg);
-      assert.deepEqual(Object.keys(s).sort(), ['exp', 'role', 'username']);
+      assert.deepEqual(Object.keys(s).sort(), ['exp', 'iat', 'issuedMs', 'role', 'sid', 'username']);
       assert.equal(s.username, 'admin');
       assert.equal(s.role, 'admin');
       assert.ok(Math.abs(s.exp - (now() + 12 * 3600)) <= 2);
+      assert.ok(Math.abs(s.iat - now()) <= 2);
+      assert.ok(Math.abs(s.issuedMs - Date.now()) < 5000, 'millisecond issue time');
+      assert.match(s.sid, /^[A-Za-z0-9_-]{16}$/, 'random session id');
     });
 
     it('never puts the password itself in the token', async () => {
       const cfg = cfgWith();
       const { token } = await createSessionToken(findUser(cfg, 'admin'), cfg);
       const payload = decodePayload(token);
-      assert.deepEqual(Object.keys(payload).sort(), ['exp', 'iat', 'pv', 'r', 'u']);
+      assert.deepEqual(Object.keys(payload).sort(), ['exp', 'iat', 'ms', 'pv', 'r', 'sid', 'u']);
       assert.ok(!JSON.stringify(payload).includes(ADMIN.password));
       assert.ok(!token.includes(Buffer.from(ADMIN.password).toString('base64url')));
+    });
+
+    it('gives every session a distinct id', async () => {
+      const cfg = cfgWith();
+      const user = findUser(cfg, 'admin');
+      const ids = new Set();
+      for (let i = 0; i < 20; i++) ids.add(decodePayload((await createSessionToken(user, cfg)).token).sid);
+      assert.equal(ids.size, 20);
     });
 
     it('honours SESSION_TTL_HOURS', async () => {

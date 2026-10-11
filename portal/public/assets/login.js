@@ -22,8 +22,19 @@
   }
 
   // Only same-site paths are honoured; the server re-validates this too.
-  var next = params.get('next') || '/';
-  if (!/^\/(?![\/\\])/.test(next)) next = '/';
+  // Check the browser-normalised form so '/..//host' cannot become '//host'.
+  function sameSitePath(value) {
+    if (typeof value !== 'string' || value.charAt(0) !== '/' || /[\\\u0000-\u001f]/.test(value)) return '/';
+    try {
+      var u = new URL(value, location.origin);
+      var out = u.pathname + u.search + u.hash;
+      if (u.origin !== location.origin || out.slice(0, 2) === '//') return '/';
+      return out;
+    } catch (e) {
+      return '/';
+    }
+  }
+  var next = sameSitePath(params.get('next') || '/');
   document.getElementById('next').value = next;
 
   var err = params.get('error');
@@ -75,7 +86,7 @@
       })
       .then(function (res) {
         if (res.ok && res.data.ok) {
-          location.replace(res.data.next || '/');
+          location.replace(sameSitePath(res.data.next || '/'));
           return;
         }
         showError(res.data.error || MESSAGES.error);

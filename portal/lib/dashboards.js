@@ -2,7 +2,7 @@
  * Dashboard records: validation, normalisation and the redacted public view.
  * All user-supplied input passes through normalizeDashboard() before storage.
  */
-import { HttpError } from './http.js';
+import { HttpError } from './errors.js';
 import { b64urlEncode, isEncrypted, randomId, sha256, vaultDecrypt, vaultEncrypt } from './crypto.js';
 
 export const COLORS = ['indigo', 'blue', 'teal', 'green', 'amber', 'orange', 'rose', 'violet', 'slate'];
@@ -21,10 +21,14 @@ function str(value, field, max, { required = false } = {}) {
   return v;
 }
 
+/** A bare host such as "example.vercel.app/admin" is read as https://... */
+const BARE_HOST = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}(?::\d{1,5})?(?:[/?#]|$)/i;
+
 /** Only absolute http(s) URLs without embedded credentials are accepted. */
 export function validUrl(value, field, { required = false } = {}) {
-  const v = str(value, field, LIMITS.url, { required });
+  let v = str(value, field, LIMITS.url, { required });
   if (!v) return '';
+  if (BARE_HOST.test(v)) v = 'https://' + v;
   let u;
   try {
     u = new URL(v);
@@ -84,7 +88,7 @@ export function normalizeDashboard(input, existing = null, { idOverride } = {}) 
     if (input.password.length > LIMITS.password) {
       throw new HttpError(400, `Password must be ${LIMITS.password} characters or fewer.`, { field: 'password' });
     }
-    password = input.password; // not trimmed: whitespace can be significant
+    password = storePlain(input.password); // not trimmed: whitespace can be significant
   }
 
   const color = COLORS.includes(input.color) ? input.color
@@ -108,6 +112,19 @@ export function normalizeDashboard(input, existing = null, { idOverride } = {}) 
   };
 }
 
+/*
+ * Stored passwords are either ciphertext ("enc:v1:...") or plaintext. A
+ * plaintext password that itself happens to start with "enc:" or "raw:" is
+ * stored as "raw:" + value, so it can never be mistaken for ciphertext.
+ */
+export function storePlain(password) {
+  return /^(enc|raw):/.test(password) ? 'raw:' + password : password;
+}
+
+function plainFromStore(value) {
+  return value.startsWith('raw:') ? value.slice(4) : value;
+}
+
 /** What the browser is allowed to see in a list: never the password. */
 export function publicView(rec) {
   const { password, ...rest } = rec;
@@ -116,12 +133,12 @@ export function publicView(rec) {
 
 export async function sealPassword(rec, vaultKey) {
   if (!vaultKey || !rec.password || isEncrypted(rec.password)) return rec;
-  return { ...rec, password: await vaultEncrypt(vaultKey, rec.password) };
+  return { ...rec, password: await vaultEncrypt(vaultKey, plainFromStore(rec.password)) };
 }
 
 export async function openPassword(rec, vaultKey) {
   if (!rec.password) return '';
-  if (!isEncrypted(rec.password)) return rec.password;
+  if (!isEncrypted(rec.password)) return plainFromStore(rec.password);
   if (!vaultKey) {
     throw new HttpError(500, 'This password is encrypted but VAULT_KEY is not set on the server.');
   }
@@ -137,14 +154,16 @@ export async function openPassword(rec, vaultKey) {
  * they stay stable between requests when no storage is connected.
  */
 export async function parseSeed(seedJson) {
-  if (!seedJson) return { items: [], errors: [] };
+  if (!seedJson || !String(seedJson).trim()) return { items: [], errors: [], fatal: false };
   let raw;
   try {
     raw = JSON.parse(seedJson);
   } catch {
-    return { items: [], errors: ['DASHBOARDS is not valid JSON.'] };
+    return { items: [], errors: ['DASHBOARDS is not valid JSON, so none of its dashboards were loaded.'], fatal: true };
   }
-  if (!Array.isArray(raw)) return { items: [], errors: ['DASHBOARDS must be a JSON array.'] };
+  if (!Array.isArray(raw)) {
+    return { items: [], errors: ['DASHBOARDS must be a JSON array ([ ... ]), so none of its dashboards were loaded.'], fatal: true };
+  }
 
   const items = [];
   const errors = [];
@@ -154,8 +173,11 @@ export async function parseSeed(seedJson) {
       let id = entry && typeof entry.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(entry.id)
         // Ids double as object keys in the browser; never let one shadow Object.prototype.
         && !(entry.id in Object.prototype) ? entry.id : null;
+      // Validate first, then derive the id from the NORMALISED url so a value
+      // written by hand and its round-tripped form hash to the same id.
+      const probe = normalizeDashboard(entry, null, { idOverride: 'x' });
       if (!id) {
-        const digest = await sha256('seed:' + String(entry && entry.name) + '\u0000' + String(entry && entry.url));
+        const digest = await sha256('seed:' + probe.name + '\u0000' + probe.url);
         id = 's' + b64urlEncode(digest).slice(0, 11);
       }
       while (ids.has(id)) id = id + '_';
@@ -168,7 +190,7 @@ export async function parseSeed(seedJson) {
       errors.push(`DASHBOARDS entry ${i + 1}: ${err.message}`);
     }
   }
-  return { items, errors };
+  return { items, errors, fatal: false };
 }
 
 export function sortDashboards(items) {

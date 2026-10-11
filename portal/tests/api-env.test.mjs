@@ -45,7 +45,8 @@ describe('API (env mode)', () => {
       assert.equal(r.status, 200);
       assert.deepEqual(r.data.user, { username: 'admin', role: 'admin' });
       assert.deepEqual(r.data.portal, { title: 'Hub' });
-      assert.deepEqual(r.data.storage, { mode: 'env', writable: false });
+      // No storage: the list is read-only and sign-out cannot be enforced server-side.
+      assert.deepEqual(r.data.storage, { mode: 'env', writable: false, canRevokeSessions: false });
       assert.equal(r.data.canEdit, true);
       assert.deepEqual(r.data.warnings.map((w) => w.code).sort(), ['no_session_secret', 'no_storage', 'no_vault_key']);
       const exp = Date.parse(r.data.sessionExpiresAt);
@@ -85,7 +86,8 @@ describe('API (env mode)', () => {
       const cookie = await signIn(ADMIN);
       const r = await call(logout.POST, req('/api/logout', { method: 'POST', cookie }));
       assert.equal(r.status, 200);
-      assert.deepEqual(r.data, { ok: true });
+      // Env mode has no storage, so the session cannot be revoked server-side.
+      assert.deepEqual(r.data, { ok: true, revoked: false, everywhere: false });
       const sc = r.res.headers.get('set-cookie');
       assert.match(sc, /^portal_session=;/);
       assert.match(sc, /Max-Age=0/);
@@ -262,6 +264,112 @@ describe('API (env mode)', () => {
       assert.deepEqual(parseEnvJson(r.data).map((e) => e.name), ['SEO Tracker', 'PMO']);
       const missing = await call(dashboards.DELETE, req('/api/dashboards?id=nope', { method: 'DELETE', cookie }));
       assert.equal(missing.status, 404);
+    });
+
+    it('answers with the redacted would-be list alongside the value', async (t) => {
+      env(t, seedEnv());
+      const cookie = await signIn(ADMIN);
+      const r = await call(dashboards.POST, req('/api/dashboards', {
+        method: 'POST', cookie, json: { name: 'Listed', url: 'https://listed.example.com', password: 'listed-pw' },
+      }));
+      assert.equal(r.status, 200, r.text);
+      assert.deepEqual(r.data.items.map((d) => d.name), ['SEO Tracker', 'Bridge Dashboard', 'PMO', 'Listed']);
+      assert.ok(r.data.items.every((d) => !('password' in d)), 'items are redacted');
+      assert.equal(r.data.items[3].hasPassword, true);
+      // Ids in the list match the ids written into the value.
+      assert.deepEqual(r.data.items.map((d) => d.id), parseEnvJson(r.data).map((e) => e.id));
+    });
+
+    it('changes made before redeploying add up when the last value is sent back as draft', async (t) => {
+      env(t, seedEnv());
+      const cookie = await signIn(ADMIN);
+      const post = (json) => call(dashboards.POST, req('/api/dashboards', { method: 'POST', cookie, json }));
+
+      const first = await post({ name: 'Alpha New', url: 'https://alpha.example.com', password: 'alpha-pw' });
+      assert.equal(first.status, 200, first.text);
+      // Without the draft the second value is built on the deployed list (the reported loss).
+      const lossy = await post({ name: 'Beta New', url: 'https://beta.example.com' });
+      assert.ok(!parseEnvJson(lossy.data).some((e) => e.name === 'Alpha New'));
+
+      const second = await post({ name: 'Beta New', url: 'https://beta.example.com', draft: first.data.envJson });
+      assert.equal(second.status, 200, second.text);
+      const entries = parseEnvJson(second.data);
+      assert.deepEqual(entries.map((e) => e.name), ['SEO Tracker', 'Bridge Dashboard', 'PMO', 'Alpha New', 'Beta New']);
+      assert.equal(entries[3].password, 'alpha-pw', 'earlier change keeps its password');
+      assert.equal(entries[0].password, 'seo-secret-pw-111');
+
+      // Edit, reorder and delete build on the draft too, and keep ids stable.
+      const alpha = second.data.items.find((d) => d.name === 'Alpha New');
+      const edit = await call(dashboards.PUT, req(`/api/dashboards?id=${alpha.id}`, {
+        method: 'PUT', cookie, json: { name: 'Alpha Renamed', url: alpha.url, draft: second.data.envJson },
+      }));
+      assert.equal(edit.status, 200, edit.text);
+      assert.equal(parseEnvJson(edit.data).find((e) => e.id === alpha.id).password, 'alpha-pw', 'password kept on edit');
+      const ids = edit.data.items.map((d) => d.id);
+      const reorder = await call(dashboards.PUT, req('/api/dashboards?action=reorder', {
+        method: 'PUT', cookie, json: { ids: ids.slice().reverse(), draft: edit.data.envJson },
+      }));
+      assert.equal(reorder.status, 200, reorder.text);
+      assert.deepEqual(parseEnvJson(reorder.data).map((e) => e.name),
+        ['Beta New', 'Alpha Renamed', 'PMO', 'Bridge Dashboard', 'SEO Tracker']);
+      const del = await call(dashboards.DELETE, req(`/api/dashboards?id=${alpha.id}`, {
+        method: 'DELETE', cookie, json: { draft: reorder.data.envJson },
+      }));
+      assert.equal(del.status, 200, del.text);
+      assert.deepEqual(parseEnvJson(del.data).map((e) => e.name), ['Beta New', 'PMO', 'Bridge Dashboard', 'SEO Tracker']);
+      // A draft-only dashboard is found for edits; one that is not in the draft is a 404.
+      const gone = await call(dashboards.DELETE, req(`/api/dashboards?id=${alpha.id}`, {
+        method: 'DELETE', cookie, json: { draft: del.data.envJson },
+      }));
+      assert.equal(gone.status, 404);
+    });
+
+    it('rejects an unreadable draft instead of building on the deployed list', async (t) => {
+      env(t, seedEnv());
+      const cookie = await signIn(ADMIN);
+      for (const draft of ['not json', '{}', 42, JSON.stringify([{ name: '', url: 'https://x.example' }]),
+        JSON.stringify([{ name: 'X', url: 'javascript:alert(1)' }])]) {
+        const r = await call(dashboards.POST, req('/api/dashboards', {
+          method: 'POST', cookie, json: { name: 'Y', url: 'https://y.example.com', draft },
+        }));
+        assert.equal(r.status, 400, JSON.stringify(draft));
+        assert.match(r.data.error, /unapplied changes/);
+        assert.equal(r.data.envJson, undefined);
+      }
+    });
+
+    it('a draft does not bypass the DASHBOARDS-errors guard', async (t) => {
+      env(t, seedEnv({ DASHBOARDS: JSON.stringify([...SEED, { name: 'Broken', url: 'ftp://nope' }]) }));
+      const cookie = await signIn(ADMIN);
+      const r = await call(dashboards.POST, req('/api/dashboards', {
+        method: 'POST', cookie, json: { name: 'Y', url: 'https://y.example.com', draft: JSON.stringify(SEED) },
+      }));
+      assert.equal(r.status, 409, r.text);
+    });
+
+    it('DELETE still works without a body', async (t) => {
+      env(t, seedEnv());
+      const cookie = await signIn(ADMIN);
+      const { items } = await list(cookie);
+      const r = await call(dashboards.DELETE, req(`/api/dashboards?id=${items[2].id}`, { method: 'DELETE', cookie }));
+      assert.equal(r.status, 200, r.text);
+      assert.equal(parseEnvJson(r.data).length, 2);
+    });
+
+    it('JSON bodies must be objects', async (t) => {
+      env(t, seedEnv());
+      const cookie = await signIn(ADMIN);
+      for (const body of ['null', '[]', '"x"', '7', 'true']) {
+        const r = await call(dashboards.POST, req('/api/dashboards', {
+          method: 'POST', cookie, body, headers: { 'content-type': 'application/json' },
+        }));
+        assert.equal(r.status, 400, body);
+        assert.equal(r.data.error, 'Expected a JSON object.');
+        const rv = await call(reveal.POST, req('/api/reveal', {
+          method: 'POST', cookie, body, headers: { 'content-type': 'application/json' },
+        }));
+        assert.equal(rv.status, 400, 'reveal ' + body);
+      }
     });
 
     it('viewers cannot mutate (403) and never receive the env JSON', async (t) => {

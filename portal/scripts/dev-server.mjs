@@ -3,8 +3,10 @@
  *   node scripts/dev-server.mjs            (or: npm run dev)
  *
  * Emulates the parts of the platform this project uses:
- *   - Routing Middleware (middleware.js) runs first on every request;
- *     returning nothing continues, returning a Response short-circuits
+ *   - Routing Middleware (middleware.js) runs first on every request. Like
+ *     Vercel's Node.js middleware runtime, only a Response carrying
+ *     `x-middleware-next: 1` continues; any other Response is final, and
+ *     returning nothing is an error (Vercel would serve an empty 200)
  *   - /api/<name> -> api/<name>.js, calling the export named after the method
  *   - static files from public/ with cleanUrls (/login -> login.html,
  *     /login.html -> 308 /login) and the headers declared in vercel.json
@@ -79,8 +81,8 @@ async function toWebRequest(req, body) {
   return new Request(url, init);
 }
 
-async function sendWeb(res, webRes, path) {
-  applyConfiguredHeaders(path, res);
+async function sendWeb(res, webRes, path, { configuredHeaders = true } = {}) {
+  if (configuredHeaders) applyConfiguredHeaders(path, res);
   res.statusCode = webRes.status;
   const cookies = typeof webRes.headers.getSetCookie === 'function' ? webRes.headers.getSetCookie() : [];
   webRes.headers.forEach((v, k) => {
@@ -118,22 +120,44 @@ const server = createServer(async (req, res) => {
   const path = url.pathname;
 
   try {
-    // cleanUrls: /foo.html -> /foo
+    // cleanUrls + trailingSlash:false, as Vercel applies them before middleware.
     if (path.endsWith('.html') && !path.startsWith('/api/')) {
       const target = path === '/index.html' ? '/' : path.slice(0, -5);
       res.writeHead(308, { Location: target + url.search });
       res.end();
       return;
     }
-
-    const mwResult = await middleware(await toWebRequest(req, body));
-    if (mwResult instanceof Response) {
-      await sendWeb(res, mwResult, path);
+    if (path === '/index') {
+      res.writeHead(308, { Location: '/' + url.search });
+      res.end();
+      return;
+    }
+    if (path.length > 1 && path.endsWith('/')) {
+      res.writeHead(308, { Location: path.replace(/\/+$/, '') + url.search });
+      res.end();
       return;
     }
 
+    // Vercel semantics: a Response with x-middleware-next: 1 means "continue"
+    // (its other headers are merged into the final response). Any other
+    // Response is sent as-is. Returning nothing is NOT treated as continue,
+    // because the platform does not document that, so the emulator must not
+    // be more permissive than production.
+    const mwResult = await middleware(await toWebRequest(req, body));
+    if (!(mwResult instanceof Response)) {
+      throw new Error('middleware returned no Response; use next() to continue');
+    }
+    if (mwResult.headers.get('x-middleware-next') !== '1') {
+      // vercel dev does not add vercel.json headers to a middleware short-circuit.
+      await sendWeb(res, mwResult, path, { configuredHeaders: false });
+      return;
+    }
+    mwResult.headers.forEach((v, k) => {
+      if (!k.startsWith('x-middleware-')) res.setHeader(k, v);
+    });
+
     if (path.startsWith('/api/')) {
-      const mod = await loadApi(path.slice(5).replace(/\/+$/, ''));
+      const mod = await loadApi(path.slice(5));
       if (!mod) {
         await sendWeb(res, new Response(JSON.stringify({ error: 'Not found' }), { status: 404 }), path);
         return;

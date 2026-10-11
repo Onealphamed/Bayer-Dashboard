@@ -20,13 +20,20 @@
     mode: 'env',
     canEdit: false,
     seedErrors: [],
+    uninitialized: false,
     status: Object.create(null),
     statusLoaded: false,
     checkedAt: null,
     query: '',
     category: 'all',
     secrets: Object.create(null), // id -> { username, password, timer, visible }
-    openMenu: null
+    openMenu: null,
+    // Env mode only: the last DASHBOARDS value handed out and not yet known to be
+    // applied. Sent back with the next change so changes add up (see showEnvJson).
+    draft: null,
+    draftChanges: 0,
+    lastEnvAnswer: null,
+    pendingFocus: null // card id whose menu button should get focus after a re-render
   };
 
   /* ---------------------------------------------------------------- helpers */
@@ -159,12 +166,25 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
+  function cssId(id) {
+    return window.CSS && CSS.escape ? CSS.escape(id) : String(id).replace(/["\\]/g, '\\$&');
+  }
+
+  /** Focuses a card's ⋯ button (re-rendered cards are new nodes), or a sensible fallback. */
+  function focusCard(id) {
+    var b = id ? document.querySelector('[data-card-menu="' + cssId(id) + '"]') : null;
+    if (!b) b = document.querySelector('[data-card-menu]');
+    if (!b || !b.offsetParent) b = !$('add-btn').hidden ? $('add-btn') : $('search');
+    b.focus();
+  }
+
   /* ------------------------------------------------------------- dialogs */
 
   var dialogStack = [];
 
   function openDialog(opts) {
     var opener = document.activeElement;
+    var openerCard = opener && opener.getAttribute && opener.getAttribute('data-card-menu');
     var titleId = 'dlg-' + Math.random().toString(36).slice(2);
     var closeBtn = el('button', {
       className: 'icon-btn', text: '×', attrs: { type: 'button', 'aria-label': 'Close' }
@@ -174,10 +194,9 @@
       attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId }
     },
       el('div', { className: 'dialog-head' },
-        el('div', { attrs: { style: null } },
+        el('div', { className: 'dialog-titles' },
           el('h2', { text: opts.title, attrs: { id: titleId } }),
           opts.subtitle ? el('p', { text: opts.subtitle }) : null),
-        el('div', { className: 'spacer' }),
         closeBtn),
       el('div', { className: 'dialog-body' }, opts.body),
       opts.footer ? el('div', { className: 'dialog-foot' }, opts.footer) : null);
@@ -188,7 +207,10 @@
       if (i >= 0) dialogStack.splice(i, 1);
       backdrop.remove();
       if (opts.onClose) opts.onClose();
-      if (opener && opener.focus && document.contains(opener)) opener.focus();
+      // The opener may have been re-rendered while the dialog was open (a card
+      // after a save); find its replacement rather than dropping focus to <body>.
+      if (opener && opener.focus && document.contains(opener) && opener !== document.body) opener.focus();
+      else if (openerCard) focusCard(openerCard);
     }
     var entry = { close: close, node: dialog };
     closeBtn.addEventListener('click', close);
@@ -225,21 +247,56 @@
 
   /* --------------------------------------------------------------- menus */
 
+  /** Closes the open menu and returns its trigger button (or null). */
   function closeMenu() {
-    if (!state.openMenu) return;
+    if (!state.openMenu) return null;
+    var button = state.openMenu.button;
     state.openMenu.menu.hidden = true;
-    state.openMenu.button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-expanded', 'false');
     state.openMenu = null;
+    return button;
+  }
+
+  /** Closes the menu and puts focus back on its trigger, so a dialog opened next
+   *  records the trigger (not a hidden menu item) as the place to return to. */
+  function leaveMenu() {
+    var b = closeMenu();
+    if (b) b.focus();
+  }
+
+  function menuItems(menu) {
+    return Array.prototype.filter.call(menu.querySelectorAll('[role="menuitem"]'), function (b) { return !b.hidden; });
+  }
+
+  function wireMenu(button, menu) {
+    if (menu.getAttribute('data-wired')) return;
+    menu.setAttribute('data-wired', '1');
+    menu.addEventListener('keydown', function (e) {
+      var items = menuItems(menu);
+      var i = items.indexOf(document.activeElement);
+      var next = null;
+      if (e.key === 'ArrowDown') next = items[(i + 1) % items.length];
+      else if (e.key === 'ArrowUp') next = items[(i - 1 + items.length) % items.length];
+      else if (e.key === 'Home') next = items[0];
+      else if (e.key === 'End') next = items[items.length - 1];
+      if (next) { e.preventDefault(); next.focus(); }
+    });
+    // Tabbing (or any focus move) out of the menu closes it.
+    menu.addEventListener('focusout', function (e) {
+      var to = e.relatedTarget;
+      if (state.openMenu && state.openMenu.menu === menu && to && !menu.contains(to) && !button.contains(to)) closeMenu();
+    });
   }
 
   function toggleMenu(button, menu) {
     var wasOpen = state.openMenu && state.openMenu.menu === menu;
     closeMenu();
     if (wasOpen) return;
+    wireMenu(button, menu);
     menu.hidden = false;
     button.setAttribute('aria-expanded', 'true');
     state.openMenu = { button: button, menu: menu };
-    var first = menu.querySelector('button:not([hidden])');
+    var first = menuItems(menu)[0];
     if (first) first.focus();
   }
 
@@ -256,6 +313,7 @@
       var t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       e.preventDefault();
+      closeMenu();
       $('search').focus();
     }
   });
@@ -268,10 +326,24 @@
     delete state.secrets[id];
   }
 
+  /** Unapplied env-mode changes are not deployed yet, so the server cannot
+   *  reveal their passwords; they are read from the pending value instead. */
+  function draftSecret(id) {
+    if (!state.draft) return null;
+    try {
+      var hit = JSON.parse(state.draft).filter(function (e) { return e && e.id === id; })[0];
+      return hit ? { username: hit.username || '', password: hit.password || '' } : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function getSecret(id) {
     var cached = state.secrets[id];
     if (cached) return Promise.resolve(cached);
-    return api('/api/reveal', { method: 'POST', body: { id: id } }).then(function (d) {
+    var local = draftSecret(id);
+    var fetched = local ? Promise.resolve(local) : api('/api/reveal', { method: 'POST', body: { id: id } });
+    return fetched.then(function (d) {
       var entry = { username: d.username, password: d.password, visible: false };
       entry.timer = setTimeout(function () {
         forgetSecret(id);
@@ -336,7 +408,7 @@
         el('span', { className: 'cred-value', text: d.username, attrs: { title: d.username } }),
         el('span', { className: 'cred-actions' },
           el('button', {
-            className: 'btn btn-sm', text: 'Copy', attrs: { type: 'button', 'aria-label': 'Copy login ID for ' + d.name },
+            className: 'btn btn-sm', text: 'Copy', attrs: { type: 'button', 'data-act': 'copy-user', 'aria-label': 'Copy login ID for ' + d.name },
             on: { click: function () {
               copyText(d.username).then(function () { toast('Login ID copied'); }, function () { toast('Copy failed', true); });
             } }
@@ -347,33 +419,38 @@
       var visible = secret && secret.visible;
       var showBtn = el('button', {
         className: 'btn btn-sm', text: visible ? 'Hide' : 'Show',
-        attrs: { type: 'button', 'aria-pressed': visible ? 'true' : 'false', 'aria-label': (visible ? 'Hide' : 'Show') + ' password for ' + d.name },
+        attrs: { type: 'button', 'data-act': 'show', 'aria-pressed': visible ? 'true' : 'false', 'aria-label': (visible ? 'Hide' : 'Show') + ' password for ' + d.name },
         on: { click: function () {
           if (visible) {
             state.secrets[d.id].visible = false;
-            refreshCreds(d.id);
+            refreshCreds(d.id, 'show');
             return;
           }
           showBtn.disabled = true;
           getSecret(d.id).then(function (s) {
             s.visible = true;
-            refreshCreds(d.id);
+            refreshCreds(d.id, 'show');
           }, function (err) {
             showBtn.disabled = false;
+            showBtn.focus();
             toast(err.message, true);
           });
         } }
       });
       var copyBtn = el('button', {
         className: 'btn btn-sm', text: 'Copy',
-        attrs: { type: 'button', 'aria-label': 'Copy password for ' + d.name },
+        attrs: { type: 'button', 'data-act': 'copy-pw', 'aria-label': 'Copy password for ' + d.name },
         on: { click: function () {
           copyBtn.disabled = true;
           getSecret(d.id).then(function (s) {
             return copyText(s.password).then(function () { toast('Password copied — clears from this page in 30 s'); });
           }).catch(function (err) {
             toast(err.message || 'Copy failed', true);
-          }).then(function () { copyBtn.disabled = false; });
+          }).then(function () {
+            var hadFocus = document.activeElement === copyBtn || document.activeElement === document.body;
+            copyBtn.disabled = false;
+            if (hadFocus && document.contains(copyBtn)) copyBtn.focus();
+          });
         } }
       });
       box.appendChild(el('div', { className: 'cred-row' },
@@ -387,23 +464,31 @@
     if (d.notes) box.appendChild(el('p', { className: 'notes', text: d.notes }));
   }
 
-  function refreshCreds(id) {
+  /** Rebuilds a card's sign-in box, keeping keyboard focus on the same control.
+   *  `act` names the control to focus when the caller knows it (a disabled
+   *  button may already have lost focus). */
+  function refreshCreds(id, act) {
     var d = state.items.filter(function (x) { return x.id === id; })[0];
-    var box = document.querySelector('[data-creds="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
-    if (d && box) fillCreds(box, d);
+    var box = document.querySelector('[data-creds="' + cssId(id) + '"]');
+    if (!d || !box) return;
+    var active = document.activeElement;
+    if (!act && active && box.contains(active)) act = active.getAttribute('data-act');
+    fillCreds(box, d);
+    var again = act ? box.querySelector('[data-act="' + act + '"]') : null;
+    if (again) again.focus();
   }
 
   function cardMenu(d, index, total) {
     var btn = el('button', {
       className: 'icon-btn', text: '⋯',
-      attrs: { type: 'button', 'aria-label': 'Actions for ' + d.name, 'aria-haspopup': 'menu', 'aria-expanded': 'false' }
+      attrs: { type: 'button', 'data-card-menu': d.id, 'aria-label': 'Actions for ' + d.name, 'aria-haspopup': 'menu', 'aria-expanded': 'false' }
     });
     var menu = el('div', { className: 'menu', attrs: { role: 'menu', hidden: true } },
-      el('button', { text: 'Edit', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { closeMenu(); openEditor(d); } } }),
-      index > 0 ? el('button', { text: 'Move earlier', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { closeMenu(); move(d.id, -1); } } }) : null,
-      index < total - 1 ? el('button', { text: 'Move later', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { closeMenu(); move(d.id, 1); } } }) : null,
+      el('button', { text: 'Edit', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { leaveMenu(); openEditor(d); } } }),
+      index > 0 ? el('button', { text: 'Move earlier', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { leaveMenu(); move(d.id, -1); } } }) : null,
+      index < total - 1 ? el('button', { text: 'Move later', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { leaveMenu(); move(d.id, 1); } } }) : null,
       el('hr'),
-      el('button', { className: 'danger', text: 'Delete', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { closeMenu(); remove(d); } } }));
+      el('button', { className: 'danger', text: 'Delete', attrs: { type: 'button', role: 'menuitem' }, on: { click: function () { leaveMenu(); remove(d); } } }));
     btn.addEventListener('click', function () { toggleMenu(btn, menu); });
     return el('div', { className: 'card-menu' }, btn, menu);
   }
@@ -437,10 +522,44 @@
         el('span', { className: 'dot', attrs: { 'aria-hidden': 'true' } }),
         el('div', { className: 'notice-body', text: w.text })));
     });
-    (state.seedErrors || []).forEach(function (e) {
+    if (state.uninitialized) {
       box.appendChild(el('div', { className: 'notice error' },
-        el('div', { className: 'notice-body', text: e })));
-    });
+        el('div', { className: 'notice-body' },
+          el('b', { text: 'Nothing imported yet. ' }),
+          'The DASHBOARDS environment variable cannot be read, so its dashboards have not been imported. ',
+          'Fix or clear DASHBOARDS in Vercel and redeploy; changes here are disabled until then.')));
+    }
+    var seedErrors = (state.seedErrors || []).filter(function (e) { return typeof e === 'string'; });
+    if (seedErrors.length && !state.uninitialized) {
+      var dismiss = state.mode === 'redis'
+        ? el('button', { className: 'btn btn-sm', text: 'Dismiss', attrs: { type: 'button' }, on: { click: function () {
+          dismiss.disabled = true;
+          api('/api/dashboards?action=dismiss-notices', { method: 'PUT', body: {} }).then(function () {
+            state.seedErrors = [];
+            renderNotices(state.me);
+          }, function (err) { dismiss.disabled = false; toast(err.message, true); });
+        } } })
+        : null;
+      box.appendChild(el('div', { className: 'notice error' },
+        el('div', { className: 'notice-body' },
+          el('b', { text: seedErrors.length === 1 ? 'One dashboard from DASHBOARDS was not loaded. ' : seedErrors.length + ' dashboards from DASHBOARDS were not loaded. ' }),
+          state.mode === 'redis'
+            ? 'Add them again with \u201cAdd dashboard\u201d, then dismiss this notice.'
+            : 'Fix these entries in the DASHBOARDS variable in Vercel; until then changes here are disabled so they are not lost.',
+          el('ul', { className: 'steps' }, seedErrors.map(function (e) { return el('li', { text: e }); }))),
+        dismiss));
+    }
+    if (state.draft) {
+      box.appendChild(el('div', { className: 'notice warn' },
+        el('span', { className: 'dot', attrs: { 'aria-hidden': 'true' } }),
+        el('div', { className: 'notice-body' },
+          el('b', { text: state.draftChanges === 1 ? '1 change not applied yet. ' : state.draftChanges + ' changes not applied yet. ' }),
+          'The list below shows them, but they take effect only after you paste the latest value into ',
+          el('code', { text: 'DASHBOARDS' }), ' in Vercel and redeploy. Further changes are added to the same value. ',
+          'Reloading this page discards them.'),
+        el('button', { className: 'btn btn-sm', text: 'Show value', attrs: { type: 'button' },
+          on: { click: function () { if (state.lastEnvAnswer) showEnvJson(state.lastEnvAnswer); } } })));
+    }
     if (state.mode !== 'redis') {
       box.appendChild(el('div', { className: 'notice info' },
         el('div', { className: 'notice-body' },
@@ -516,6 +635,7 @@
     state.rev = data.rev || 0;
     state.mode = data.mode || 'env';
     state.canEdit = !!data.canEdit;
+    state.uninitialized = !!data.uninitialized;
     if (data.seedErrors) state.seedErrors = data.seedErrors;
     Object.keys(state.secrets).forEach(function (id) {
       if (!state.items.some(function (d) { return d.id === id; })) forgetSecret(id);
@@ -541,20 +661,55 @@
     });
   }
 
+  function applyPendingFocus() {
+    if (!state.pendingFocus) return;
+    var id = state.pendingFocus.id;
+    state.pendingFocus = null;
+    focusCard(id);
+  }
+
+  /** Mutation body: env mode carries the unapplied value so changes add up. */
+  function withDraft(body) {
+    if (state.mode !== 'redis' && state.draft) body.draft = state.draft;
+    return body;
+  }
+
   /** Handles the answer to any add / edit / delete / reorder. */
   function afterMutation(data, okMessage) {
     if (data.readOnly) {
+      // Nothing was saved: show the would-be list and keep the value as the base
+      // for the next change, so pasting only the latest value loses nothing.
+      state.draft = data.envJson;
+      state.draftChanges += 1;
+      state.lastEnvAnswer = data;
+      if (Array.isArray(data.items)) state.items = data.items;
+      renderAll();
+      applyPendingFocus();
       showEnvJson(data);
       return false;
     }
     applyList(data);
     renderAll();
+    applyPendingFocus();
     toast(okMessage);
     loadStatus();
     return true;
   }
 
+  window.addEventListener('beforeunload', function (e) {
+    if (!state.draft) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
   function onMutationError(err) {
+    state.pendingFocus = null;
+    if (err.status === 409 && err.data && Array.isArray(err.data.seedErrors)) {
+      state.seedErrors = err.data.seedErrors;
+      renderNotices(state.me);
+      toast(err.message, true);
+      return;
+    }
     if (err.status === 409 && err.data && err.data.conflict) {
       toast(err.message, true);
       loadList();
@@ -569,7 +724,8 @@
     if (i < 0 || j < 0 || j >= ids.length) return;
     ids[i] = ids[j];
     ids[j] = id;
-    api('/api/dashboards?action=reorder', { method: 'PUT', body: { ids: ids, rev: state.rev } })
+    state.pendingFocus = { id: id };
+    api('/api/dashboards?action=reorder', { method: 'PUT', body: withDraft({ ids: ids, rev: state.rev }) })
       .then(function (d) { afterMutation(d, 'Order updated'); }, onMutationError);
   }
 
@@ -578,7 +734,11 @@
       'This removes the dashboard and its saved sign-in details from the hub. The dashboard itself is not affected.',
       'Delete', true).then(function (yes) {
       if (!yes) return;
-      api('/api/dashboards?id=' + encodeURIComponent(d.id) + '&rev=' + state.rev, { method: 'DELETE' })
+      // Focus moves to the neighbouring card once this one is gone.
+      var i = state.items.map(function (x) { return x.id; }).indexOf(d.id);
+      var neighbour = state.items[i + 1] || state.items[i - 1];
+      state.pendingFocus = { id: neighbour ? neighbour.id : null };
+      api('/api/dashboards?id=' + encodeURIComponent(d.id) + '&rev=' + state.rev, { method: 'DELETE', body: withDraft({}) })
         .then(function (res) { forgetSecret(d.id); afterMutation(res, 'Dashboard deleted'); }, onMutationError);
     });
   }
@@ -651,7 +811,7 @@
         row.querySelector('input').focus();
       } } });
 
-    var formError = el('div', { className: 'form-alert', attrs: { role: 'alert', hidden: true } });
+    var formError = el('div', { className: 'form-alert', attrs: { role: 'alert', tabindex: '-1', hidden: true } });
     var form = el('form', { attrs: { novalidate: true, id: 'dash-form' } },
       formError,
       field('Name *', fName, null, 'name'),
@@ -686,8 +846,37 @@
 
     function clearErrors() {
       formError.hidden = true;
-      form.querySelectorAll('.field.invalid').forEach(function (f) { f.classList.remove('invalid'); });
-      form.querySelectorAll('.field .err').forEach(function (e) { e.remove(); });
+      form.querySelectorAll('.invalid').forEach(function (f) { f.classList.remove('invalid'); });
+      form.querySelectorAll('.err').forEach(function (e) { e.remove(); });
+    }
+
+    /** A message not tied to one field: shown at the top of the form, which may
+     *  be scrolled out of view, so bring it into view and move focus to it. */
+    function showFormError(message) {
+      formError.textContent = message;
+      formError.hidden = false;
+      formError.scrollIntoView({ block: 'nearest' });
+      formError.focus();
+    }
+
+    /** "Link 2 URL" / "Link 2 label" / "Link 2 needs a URL." → that row's input. */
+    function markLinkInvalid(message) {
+      var m = /^Link (\d+)( label)?/.exec(message);
+      var row = m && links.children[Number(m[1]) - 1];
+      if (!row) return false;
+      var target = row.querySelectorAll('input')[m[2] ? 0 : 1];
+      row.classList.add('invalid');
+      target.classList.add('invalid');
+      row.after(el('div', { className: 'err link-err', text: message }));
+      target.focus();
+      return true;
+    }
+
+    /** "/admin" typed as an extra link means a page on the main site. */
+    function resolveLink(value, base) {
+      var v = value.trim();
+      if (!/^\/(?!\/)/.test(v)) return v;
+      try { return new URL(v, new URL(base)).toString(); } catch (e) { return v; }
     }
 
     form.addEventListener('submit', function (e) {
@@ -699,10 +888,13 @@
         color: (form.querySelector('input[name="f-color"]:checked') || {}).value,
         links: Array.prototype.map.call(links.children, function (row) {
           var ins = row.querySelectorAll('input');
-          return { label: ins[0].value, url: ins[1].value.trim() };
+          var resolved = resolveLink(ins[1].value, fUrl.value.trim());
+          if (resolved !== ins[1].value.trim()) ins[1].value = resolved;
+          return { label: ins[0].value, url: resolved };
         }),
         rev: state.rev
       };
+      withDraft(payload);
       if (fPass.value) payload.password = fPass.value;
       else if (editing && clearPass.checked) payload.password = '';
       else if (!editing) payload.password = '';
@@ -715,33 +907,30 @@
         ? api('/api/dashboards?id=' + encodeURIComponent(d.id), { method: 'PUT', body: payload })
         : api('/api/dashboards', { method: 'POST', body: payload });
       req.then(function (res) {
-        if (editing) forgetSecret(d.id);
+        if (editing) {
+          forgetSecret(d.id);
+          state.pendingFocus = { id: d.id };
+        }
         dlg.close();
         afterMutation(res, editing ? 'Dashboard updated' : 'Dashboard added');
       }, function (err) {
         save.disabled = false;
         if (err.status === 400) {
           var f = err.data && err.data.field;
-          var map = { Name: 'name', URL: 'url', Category: 'category', Description: 'description', Username: 'username', Notes: 'notes', password: 'password', links: null };
+          var map = { Name: 'name', URL: 'url', Category: 'category', Description: 'description', Username: 'username', Notes: 'notes', password: 'password' };
           var key = f && Object.prototype.hasOwnProperty.call(map, f) ? map[f] : null;
           if (key) markInvalid(key, err.message);
-          else { formError.textContent = err.message; formError.hidden = false; }
+          else if (!markLinkInvalid(err.message)) showFormError(err.message);
           return;
         }
-        if (err.status === 409 && err.data && err.data.conflict) {
-          formError.textContent = err.message;
-          formError.hidden = false;
-          loadList();
-          return;
-        }
-        formError.textContent = err.message;
-        formError.hidden = false;
+        if (err.status === 409 && err.data && err.data.conflict) loadList();
+        showFormError(err.message);
       });
     });
 
     function markInvalid(name, message) {
       var wrap = form.querySelector('[data-field="' + name + '"]');
-      if (!wrap) { formError.textContent = message; formError.hidden = false; return; }
+      if (!wrap) { showFormError(message); return; }
       wrap.classList.add('invalid');
       wrap.appendChild(el('span', { className: 'err', text: message }));
       var target = wrap.querySelector('input, textarea');
@@ -770,7 +959,10 @@
         el('ol', { className: 'steps' },
           el('li', null, 'Vercel → this project → ', el('b', { text: 'Settings → Environment Variables' }), '.'),
           el('li', null, 'Edit ', el('code', { text: 'DASHBOARDS' }), ', replace its value with the one above, and save.'),
-          el('li', null, el('b', { text: 'Deployments' }), ' → ⋯ on the latest deployment → ', el('b', { text: 'Redeploy' }), '.'))
+          el('li', null, el('b', { text: 'Deployments' }), ' → ⋯ on the latest deployment → ', el('b', { text: 'Redeploy' }), '.')),
+        state.draftChanges > 1
+          ? el('p', { className: 'hint-line', text: 'This value includes all ' + state.draftChanges + ' changes made since the page loaded, so only this latest value needs pasting.' })
+          : el('p', { className: 'hint-line', text: 'More changes to make? Go ahead before redeploying: each new value includes the earlier ones, so you only paste the last one.' })
       ],
       footer: [done, copy]
     });
@@ -817,8 +1009,8 @@
       }
       var LABEL = { login: 'Sign-in', login_failed: 'Failed sign-in', logout: 'Sign-out', create: 'Added', update: 'Edited',
         delete: 'Deleted', reorder: 'Reordered', reveal: 'Viewed password', export: 'Backup', export_secrets: 'Exported passwords' };
-      body.appendChild(el('table', { className: 'activity' },
-        el('thead', null, el('tr', null, el('th', { text: 'When' }), el('th', { text: 'Event' }), el('th', { text: 'User' }), el('th', { text: 'Dashboard' }), el('th', { text: 'IP' }))),
+      body.appendChild(el('div', { className: 'table-scroll' }, el('table', { className: 'activity' },
+        el('thead', null, el('tr', null, el('th', { text: 'When' }), el('th', { text: 'Event' }), el('th', { text: 'User' }), el('th', { text: 'Dashboard' }), el('th', { className: 'ip', text: 'IP' }))),
         el('tbody', null, data.events.map(function (ev) {
           var str = function (v) { return typeof v === 'string' || typeof v === 'number' ? String(v) : ''; };
           var type = str(ev && ev.type);
@@ -828,8 +1020,8 @@
             el('td', null, el('span', { className: 'ev ' + type.replace(/[^a-z_]/g, ''), text: label })),
             el('td', { text: str(ev && ev.user) }),
             el('td', { text: str(ev && ev.target) }),
-            el('td', { text: str(ev && ev.ip) }));
-        }))));
+            el('td', { className: 'ip', text: str(ev && ev.ip) }));
+        })))));
     }).catch(function (err) {
       body.textContent = '';
       body.appendChild(el('p', { text: err.message }));
@@ -846,14 +1038,29 @@
         var stamp = new Date().toISOString().slice(0, 10);
         download((withSecrets ? 'dashboards-full-' : 'dashboards-backup-') + stamp + '.json',
           JSON.stringify(data.dashboards, null, 2));
-        toast(withSecrets ? 'Exported with passwords' : 'Backup downloaded');
+        if (data.unreadable && data.unreadable.length) {
+          toast('Exported, but these passwords could not be read and were left out: ' + data.unreadable.join(', '), true);
+        } else {
+          toast(withSecrets ? 'Exported with passwords' : 'Backup downloaded');
+        }
       }, function (err) { toast(err.message, true); });
     });
   }
 
-  function logout() {
-    api('/api/logout', { method: 'POST', body: {} }).catch(function () {}).then(function () {
-      location.replace('/login');
+  function logout(everywhere) {
+    var go = everywhere
+      ? confirmDialog('Sign out of all devices?', 'Every browser signed in as ' + state.me.user.username + ' will be signed out, including this one.', 'Sign out everywhere', true)
+      : Promise.resolve(true);
+    go.then(function (yes) {
+      if (!yes || !state.draft) return yes;
+      return confirmDialog('Discard unapplied changes?',
+        'Your latest changes have not been pasted into Vercel yet. Signing out discards them.', 'Sign out', true);
+    }).then(function (yes) {
+      if (!yes) return;
+      state.draft = null; // no "leave page?" prompt once the user has chosen
+      api('/api/logout', { method: 'POST', body: { everywhere: !!everywhere } }).catch(function () {}).then(function () {
+        location.replace('/login');
+      });
     });
   }
 
@@ -870,6 +1077,7 @@
     var admin = me.user.role === 'admin';
     $('add-btn').hidden = !admin;
     document.querySelectorAll('.admin-only').forEach(function (n) { n.hidden = !admin; });
+    $('logout-all').hidden = !(me.storage && me.storage.canRevokeSessions);
 
     var userBtn = $('user-btn');
     var menu = $('user-menu');
@@ -877,15 +1085,22 @@
     menu.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-action]');
       if (!b) return;
-      closeMenu();
+      leaveMenu();
       var a = b.getAttribute('data-action');
-      if (a === 'logout') logout();
+      if (a === 'logout') logout(false);
+      else if (a === 'logout-all') logout(true);
       else if (a === 'activity') showActivity();
       else if (a === 'backup') backup(false);
       else if (a === 'export-secrets') backup(true);
       else if (a === 'storage-help') storageHelp();
     });
-    $('add-btn').addEventListener('click', function () { openEditor(null); });
+    $('add-btn').addEventListener('click', function () {
+      if (state.uninitialized || (state.mode !== 'redis' && state.seedErrors.length)) {
+        toast('Fix the DASHBOARDS variable first (see the notice above).', true);
+        return;
+      }
+      openEditor(null);
+    });
 
     var search = $('search');
     search.addEventListener('input', function () { state.query = search.value; renderGrid(); });

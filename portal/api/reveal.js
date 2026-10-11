@@ -14,7 +14,7 @@ import { audit, hit, loadDashboards } from '../lib/store.js';
 export const POST = handle(async (request) => {
   assertSameOrigin(request);
   const cfg = getConfig();
-  const session = await requireSession(request, cfg);
+  const session = await requireSession(request, cfg, { strict: true });
   const body = await readJson(request);
 
   const limit = await hit(cfg, 'reveal:' + session.username.toLowerCase(), 120, 10 * 60);

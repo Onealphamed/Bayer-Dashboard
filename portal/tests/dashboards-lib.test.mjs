@@ -91,7 +91,24 @@ describe('lib/dashboards.js', () => {
     });
 
     it('rejects relative and malformed URLs', () => {
-      for (const bad of ['example.com', '/dashboard', '//example.com', 'https://', 'http://exa mple.com', 'https://[::1']) {
+      for (const bad of ['/dashboard', '//example.com', 'https://', 'http://exa mple.com', 'https://[::1',
+        'localhost', 'dashboard', 'example', 'example.com@evil.com', 'exa mple.com', '.example.com']) {
+        rejects400(() => normalizeDashboard(ok({ url: bad })), 'URL', bad);
+      }
+    });
+
+    it('reads a bare host name as https:// (a common way to paste a Vercel URL)', () => {
+      const cases = {
+        'example.com': 'https://example.com/',
+        'howrah-bridge-pmo-alpha.vercel.app': 'https://howrah-bridge-pmo-alpha.vercel.app/',
+        'seo.example.co.uk/admin?x=1': 'https://seo.example.co.uk/admin?x=1',
+        'x.example.com:8443/path': 'https://x.example.com:8443/path',
+      };
+      for (const [input, want] of Object.entries(cases)) {
+        assert.equal(normalizeDashboard(ok({ url: input })).url, want, input);
+      }
+      // Never turns a dangerous scheme into a link.
+      for (const bad of ['javascript:alert(1)', 'data:text/html,x', 'vbscript:x', 'mailto:a@b.example']) {
         rejects400(() => normalizeDashboard(ok({ url: bad })), 'URL', bad);
       }
     });
@@ -305,12 +322,33 @@ describe('lib/dashboards.js', () => {
 
   describe('parseSeed', () => {
     it('handles empty, invalid and non-array input', async () => {
-      assert.deepEqual(await parseSeed(''), { items: [], errors: [] });
-      assert.deepEqual(await parseSeed(undefined), { items: [], errors: [] });
-      assert.deepEqual(await parseSeed('[]'), { items: [], errors: [] });
-      assert.deepEqual((await parseSeed('{oops')).errors, ['DASHBOARDS is not valid JSON.']);
-      assert.deepEqual((await parseSeed('{"name":"x"}')).errors, ['DASHBOARDS must be a JSON array.']);
-      assert.deepEqual((await parseSeed('null')).errors, ['DASHBOARDS must be a JSON array.']);
+      // Empty / absent is a valid "no dashboards"; unreadable input is FATAL so
+      // storage is never seeded with an empty list by mistake.
+      assert.deepEqual(await parseSeed(''), { items: [], errors: [], fatal: false });
+      assert.deepEqual(await parseSeed('   '), { items: [], errors: [], fatal: false });
+      assert.deepEqual(await parseSeed(undefined), { items: [], errors: [], fatal: false });
+      assert.deepEqual(await parseSeed('[]'), { items: [], errors: [], fatal: false });
+      for (const [input, re] of [['{oops', /not valid JSON/], ['{"name":"x"}', /must be a JSON array/], ['null', /must be a JSON array/]]) {
+        const r = await parseSeed(input);
+        assert.equal(r.fatal, true, input);
+        assert.deepEqual(r.items, [], input);
+        assert.equal(r.errors.length, 1, input);
+        assert.match(r.errors[0], re, input);
+      }
+    });
+
+    it('derives the same id whether or not the URL has a trailing slash', async () => {
+      const a = await parseSeed(JSON.stringify([{ name: 'D', url: 'https://dup.example.com' }]));
+      const b = await parseSeed(JSON.stringify([{ name: 'D', url: 'https://dup.example.com/' }]));
+      assert.equal(a.items[0].id, b.items[0].id);
+    });
+
+    it('never lets an explicit id shadow an Object.prototype property', async () => {
+      const r = await parseSeed(JSON.stringify(['__proto__', 'constructor', 'toString', 'valueOf', 'ok-id']
+        .map((id) => ({ id, name: id, url: 'https://x.example/' + id }))));
+      const ids = r.items.map((d) => d.id);
+      for (const bad of ['__proto__', 'constructor', 'toString', 'valueOf']) assert.ok(!ids.includes(bad), bad);
+      assert.ok(ids.includes('ok-id'));
     });
 
     it('derives ids from content so they are stable between calls', async () => {
@@ -384,23 +422,44 @@ describe('lib/dashboards.js', () => {
         links: [{ label: 'L', url: 'https://l.example' }],
       }));
       const bare = normalizeDashboard({ name: 'Bare', url: 'https://bare.example' });
-      const entries = await toSeedEntries([rec, bare], null);
+      const { entries, unreadable } = await toSeedEntries([rec, bare], null);
+      assert.deepEqual(unreadable, []);
       assert.deepEqual(entries[0], {
-        name: 'Sales', url: 'https://sales.example.com/', description: 'd', category: 'c', color: 'teal',
+        id: rec.id, name: 'Sales', url: 'https://sales.example.com/', description: 'd', category: 'c', color: 'teal',
         links: [{ label: 'L', url: 'https://l.example/' }], username: 'u', password: 'p', notes: 'n',
       });
-      assert.deepEqual(Object.keys(entries[1]).sort(), ['color', 'name', 'url']);
-      const back = await parseSeed(await toSeedJson([rec], null));
+      assert.deepEqual(Object.keys(entries[1]).sort(), ['color', 'id', 'name', 'url']);
+      const { json: seedJson } = await toSeedJson([rec], null);
+      const back = await parseSeed(seedJson);
       assert.equal(back.errors.length, 0);
       assert.equal(back.items[0].password, 'p');
+      assert.equal(back.items[0].id, rec.id, 'ids survive the paste round trip');
     });
 
     it('decrypts sealed passwords and can leave secrets out', async () => {
       const sealed = await sealPassword(normalizeDashboard(ok({ password: 'p-1' })), 'vault');
-      assert.equal((await toSeedEntries([sealed], 'vault'))[0].password, 'p-1');
-      const noSecrets = await toSeedEntries([sealed], 'vault', { includeSecrets: false });
+      assert.equal((await toSeedEntries([sealed], 'vault')).entries[0].password, 'p-1');
+      const noSecrets = (await toSeedEntries([sealed], 'vault', { includeSecrets: false })).entries;
       assert.equal('password' in noSecrets[0], false);
       assert.ok(!JSON.stringify(noSecrets).includes('enc:v1:'));
+    });
+
+    it('leaves out a password it cannot decrypt instead of failing the whole export', async () => {
+      const good = await sealPassword(normalizeDashboard(ok({ name: 'Good', password: 'g' })), 'vault');
+      const stale = await sealPassword(normalizeDashboard(ok({ name: 'Stale', password: 's' })), 'old-key');
+      const { entries, unreadable } = await toSeedEntries([good, stale], 'vault');
+      assert.equal(entries[0].password, 'g');
+      assert.equal('password' in entries[1], false);
+      assert.deepEqual(unreadable, ['Stale']);
+    });
+
+    it('round-trips a plaintext password that looks like ciphertext', async () => {
+      const rec = normalizeDashboard(ok({ password: 'enc:v1:notreally' }));
+      assert.equal(await openPassword(rec, null), 'enc:v1:notreally');
+      assert.equal(await openPassword(await sealPassword(rec, 'vault'), 'vault'), 'enc:v1:notreally');
+      const { json: seedJson } = await toSeedJson([rec], null);
+      const back = await parseSeed(seedJson);
+      assert.equal(await openPassword(back.items[0], null), 'enc:v1:notreally');
     });
   });
 });

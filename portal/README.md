@@ -5,7 +5,8 @@ per dashboard with its links, live up/down status, and its saved sign-in details
 (login ID and password, revealed or copied on demand).
 
 - **Zero dependencies.** Plain HTML/CSS/JS front-end, Vercel Functions for the API,
-  Vercel Routing Middleware for the login gate. No build step.
+  Vercel Routing Middleware (Node.js runtime) for the login gate. No build step.
+  Verified with `vercel build` and `vercel dev` from Vercel CLI 63.
 - **Credentials stay server-side.** No password is ever in a static file, in git,
   in the list API, or in a URL. Each one is fetched on demand from `/api/reveal`,
   logged, held in the browser for 30 seconds, then dropped. With storage connected
@@ -51,6 +52,10 @@ Generate strong values locally with `node scripts/generate-secrets.mjs <login-id
 Without storage the hub still works, read-only: the list comes from `DASHBOARDS`, and
 "Add dashboard" produces the updated `DASHBOARDS` value for you to paste into Vercel.
 
+If `DASHBOARDS` is not valid JSON when storage is first connected, nothing is imported
+and changes are disabled until it is fixed — the hub never locks in an empty list. Any
+individual entry that cannot be imported is listed in a notice for the admin.
+
 ---
 
 ## Adding more dashboards later
@@ -61,6 +66,11 @@ Edit, reorder (⋯ → Move earlier / later) and delete from each card's ⋯ men
 
 **Without storage:** same form; instead of saving, it shows the complete new `DASHBOARDS`
 value. Paste it into **Settings → Environment Variables → DASHBOARDS** and redeploy.
+You can make several changes before redeploying: each new value includes the earlier ones
+(a banner counts them and **Show value** reopens the latest), so you only paste the last
+value. Reloading the page before pasting discards those changes, and the browser asks first.
+
+An extra link typed as a path, such as `/admin`, is treated as a page on the main URL.
 
 ### `DASHBOARDS` format
 ```json
@@ -78,8 +88,9 @@ value. Paste it into **Settings → Environment Variables → DASHBOARDS** and r
   }
 ]
 ```
-Only `name` and `url` are required. `color` is one of
-`indigo blue teal green amber orange rose violet slate`.
+Only `name` and `url` are required. A bare host such as `my-app.vercel.app` is read as
+`https://my-app.vercel.app`. `color` is one of `indigo blue teal green amber orange rose violet slate`.
+An optional `id` keeps a dashboard's identity stable; exported values include it.
 
 ---
 
@@ -87,10 +98,17 @@ Only `name` and `url` are required. `color` is one of
 - **admin** — `PORTAL_USERNAME` and any `PORTAL_USERS` entry with `"role":"admin"`:
   add / edit / delete / reorder, activity log, backups.
 - **viewer** — open dashboards and reveal/copy their credentials; no changes.
+- A `PORTAL_USERS` entry with a missing or misspelled role is a **viewer**, never an
+  admin, and the admin sees a warning.
 
 ## Security notes
 - Sessions are HMAC-signed, `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, and expire
   (12 h default). Changing a user's password in Vercel signs that user out everywhere.
+- With storage connected, **Sign out** revokes the session on the server (a copied cookie
+  stops working), and **Sign out of all devices** ends every session for your login.
+  Without storage, signing out clears the browser cookie only; change the password to
+  force everyone out.
+- Authenticated API calls refuse cross-site requests, including plain link navigations.
 - Sign-in is rate limited (10 failures per IP and 20 per login ID per 15 minutes).
 - State-changing requests require a same-origin JSON request (CSRF protection).
 - Strict Content-Security-Policy, `X-Frame-Options: DENY`, `noindex` on every page.

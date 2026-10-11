@@ -68,7 +68,7 @@ describe('API (redis mode)', { skip: REDIS_SKIP }, () => {
     it('me reports writable redis storage and no warnings for a full config', async (t) => {
       env(t, redisEnv());
       const r = await call(me.GET, req('/api/me', { cookie: await signIn(ADMIN) }));
-      assert.deepEqual(r.data.storage, { mode: 'redis', writable: true });
+      assert.deepEqual(r.data.storage, { mode: 'redis', writable: true, canRevokeSessions: true });
       assert.deepEqual(r.data.warnings, []);
     });
 
