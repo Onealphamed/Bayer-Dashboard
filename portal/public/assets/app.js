@@ -20,12 +20,12 @@
     mode: 'env',
     canEdit: false,
     seedErrors: [],
-    status: {},
+    status: Object.create(null),
     statusLoaded: false,
     checkedAt: null,
     query: '',
     category: 'all',
-    secrets: {},          // id -> { username, password, timer, visible }
+    secrets: Object.create(null), // id -> { username, password, timer, visible }
     openMenu: null
   };
 
@@ -416,10 +416,10 @@
         el('div', { className: 'tile', text: initials(d.name), attrs: { 'aria-hidden': 'true' } }),
         el('div', { className: 'card-title' },
           el('h2', { text: d.name }),
+          el('div', { className: 'card-host', text: hostOf(d.url), attrs: { title: d.url } }),
           el('div', { className: 'card-sub' },
             d.category ? el('span', { className: 'tag', text: d.category }) : null,
-            el('span', { className: 'host', text: hostOf(d.url) })),
-          el('div', { className: 'card-sub' }, statusNode(d.id)))),
+            statusNode(d.id)))),
       el('div', { className: 'card-body' },
         d.description ? el('p', { className: 'card-desc', text: d.description }) : null,
         el('div', { className: 'links' }, links)),
@@ -453,7 +453,7 @@
   }
 
   function renderChips() {
-    var cats = {};
+    var cats = Object.create(null);
     state.items.forEach(function (d) { var c = d.category || 'Uncategorised'; cats[c] = (cats[c] || 0) + 1; });
     var names = Object.keys(cats).sort();
     var box = $('chips');
@@ -528,7 +528,7 @@
 
   function loadStatus() {
     return api('/api/status').then(function (data) {
-      state.status = data.results || {};
+      state.status = Object.assign(Object.create(null), data.results || {});
       state.statusLoaded = true;
       state.checkedAt = new Date().toISOString();
       document.querySelectorAll('[data-status]').forEach(function (node) {
@@ -663,7 +663,7 @@
       field('Description', fDesc, null, 'description'),
       el('div', { className: 'section-label', text: 'Extra links' }),
       links,
-      el('div', { className: 'field' }, addLink, el('span', { className: 'hint', text: 'For admin panels, login pages, reports…' })),
+      el('div', { className: 'field field-inline' }, addLink, el('span', { className: 'hint', text: 'For admin panels, login pages, reports…' })),
       el('div', { className: 'section-label', text: 'Sign-in details' }),
       el('div', { className: 'row-2' },
         field('Login ID / username', fUser, null, 'username'),
@@ -806,6 +806,7 @@
     openDialog({ title: 'Activity log', subtitle: 'Sign-ins, changes and credential reveals', size: 'wide', body: body });
     api('/api/audit?limit=100').then(function (data) {
       body.textContent = '';
+      if (!data || !Array.isArray(data.events)) throw new Error('The activity log could not be read.');
       if (data.mode !== 'redis') {
         body.appendChild(el('p', { text: 'The activity log needs storage. Connect Upstash Redis to start recording sign-ins, edits and credential reveals.' }));
         return;
@@ -819,14 +820,17 @@
       body.appendChild(el('table', { className: 'activity' },
         el('thead', null, el('tr', null, el('th', { text: 'When' }), el('th', { text: 'Event' }), el('th', { text: 'User' }), el('th', { text: 'Dashboard' }), el('th', { text: 'IP' }))),
         el('tbody', null, data.events.map(function (ev) {
+          var str = function (v) { return typeof v === 'string' || typeof v === 'number' ? String(v) : ''; };
+          var type = str(ev && ev.type);
+          var label = Object.prototype.hasOwnProperty.call(LABEL, type) ? LABEL[type] : type;
           return el('tr', null,
-            el('td', { className: 'when', text: dateTimeLabel(ev.t) }),
-            el('td', null, el('span', { className: 'ev ' + String(ev.type).replace(/[^a-z_]/g, ''), text: LABEL[ev.type] || ev.type })),
-            el('td', { text: ev.user || '' }),
-            el('td', { text: ev.target || '' }),
-            el('td', { text: ev.ip || '' }));
+            el('td', { className: 'when', text: dateTimeLabel(str(ev && ev.t)) }),
+            el('td', null, el('span', { className: 'ev ' + type.replace(/[^a-z_]/g, ''), text: label })),
+            el('td', { text: str(ev && ev.user) }),
+            el('td', { text: str(ev && ev.target) }),
+            el('td', { text: str(ev && ev.ip) }));
         }))));
-    }, function (err) {
+    }).catch(function (err) {
       body.textContent = '';
       body.appendChild(el('p', { text: err.message }));
     });

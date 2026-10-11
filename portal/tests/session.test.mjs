@@ -1,4 +1,4 @@
-import { describe, it, mock } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getConfig } from '../lib/config.js';
 import { b64urlEncode, hmacSign, utf8 } from '../lib/crypto.js';
@@ -143,8 +143,8 @@ describe('lib/session.js', () => {
       const cfg = cfgWith({ SESSION_TTL_HOURS: '1' });
       const { token } = await createSessionToken(findUser(cfg, 'admin'), cfg);
       assert.ok(await verifySessionToken(token, cfg));
-      mock.timers.enable({ apis: ['Date'], now: Date.now() + 3600 * 1000 + 5000 });
-      t.after(() => mock.timers.reset());
+      const later = Date.now() + 3600 * 1000 + 5000;
+      t.mock.method(Date, 'now', () => later);
       assert.equal(await verifySessionToken(token, cfg), null);
     });
 

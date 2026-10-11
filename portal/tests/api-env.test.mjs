@@ -2,7 +2,7 @@
  * API handlers in env mode (no storage connected): the list comes from the
  * DASHBOARDS variable and mutations answer with the value to paste into Vercel.
  */
-import { describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import * as audit from '../api/audit.js';
 import * as dashboards from '../api/dashboards.js';
@@ -11,7 +11,7 @@ import * as logout from '../api/logout.js';
 import * as me from '../api/me.js';
 import * as reveal from '../api/reveal.js';
 import {
-  ADMIN, SEED, SEED_PASSWORDS, VIEWER, baseEnv, call, env, req, signIn,
+  ADMIN, SEED, SEED_PASSWORDS, VIEWER, baseEnv, call, env, req, resetLoginLimits, signIn, silenceAuditLogs,
 } from './helpers/portal.mjs';
 
 const seedEnv = (extra = {}) => baseEnv({ DASHBOARDS: JSON.stringify(SEED), ...extra });
@@ -28,6 +28,8 @@ function assertNoSeedPasswords(text, label = '') {
 }
 
 describe('API (env mode)', () => {
+  silenceAuditLogs();
+  afterEach(() => resetLoginLimits());
   describe('GET /api/me', () => {
     it('401 when signed out', async (t) => {
       env(t, seedEnv());

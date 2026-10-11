@@ -4,11 +4,12 @@
  * Admins only. The response is the exact JSON the DASHBOARDS variable accepts.
  */
 import { getConfig } from '../lib/config.js';
-import { clientIp, handle, json, methodNotAllowed, requireAdmin } from '../lib/http.js';
+import { assertSameOrigin, clientIp, handle, json, methodNotAllowed, requireAdmin } from '../lib/http.js';
 import { toSeedEntries } from '../lib/seedjson.js';
 import { audit, loadDashboards } from '../lib/store.js';
 
 export const GET = handle(async (request) => {
+  assertSameOrigin(request);
   const cfg = getConfig();
   const session = await requireAdmin(request, cfg);
   const includeSecrets = new URL(request.url).searchParams.get('secrets') === '1';

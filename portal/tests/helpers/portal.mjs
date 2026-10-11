@@ -5,7 +5,10 @@
  * Config is read from process.env on every call, so each test sets exactly the
  * variables it needs with env(t, {...}); everything is restored afterwards.
  */
+import { spawnSync } from 'node:child_process';
+import { after, before } from 'node:test';
 import { POST as loginPOST } from '../../api/login.js';
+import { clearHits } from '../../lib/store.js';
 
 /** Every variable the portal reads. env() clears all of them before applying a test's values. */
 export const PORTAL_ENV_KEYS = [
@@ -131,4 +134,37 @@ export async function signIn(user = ADMIN, { ip } = {}) {
   }
   const setCookie = res.headers.get('set-cookie');
   return setCookie.split(';')[0];
+}
+
+/**
+ * In env mode every audit event is console.log'ed; call this inside a describe()
+ * to keep test output readable. Other console output is passed through.
+ */
+export function silenceAuditLogs() {
+  let original;
+  before(() => {
+    original = console.log;
+    console.log = (...args) => {
+      if (typeof args[0] === 'string' && args[0].startsWith('[portal] audit')) return;
+      original(...args);
+    };
+  });
+  after(() => {
+    console.log = original;
+  });
+}
+
+/**
+ * Clears the in-memory per-username sign-in counters (env mode keeps them for
+ * the life of the process), so deliberate failed sign-ins in one test can never
+ * lock an account for a later one.
+ */
+export async function resetLoginLimits(usernames = ['admin', 'viewer', 'target', '']) {
+  for (const u of usernames) await clearHits({ redis: null }, 'login:user:' + u);
+}
+
+/** True when a redis-server binary is on PATH (needed by tests/helpers/upstash-shim.mjs). */
+export function haveRedisServer() {
+  const r = spawnSync('redis-server', ['--version'], { stdio: 'ignore' });
+  return !r.error && r.status === 0;
 }

@@ -151,7 +151,9 @@ export async function parseSeed(seedJson) {
   const ids = new Set();
   for (const [i, entry] of raw.entries()) {
     try {
-      let id = entry && typeof entry.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(entry.id) ? entry.id : null;
+      let id = entry && typeof entry.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(entry.id)
+        // Ids double as object keys in the browser; never let one shadow Object.prototype.
+        && !(entry.id in Object.prototype) ? entry.id : null;
       if (!id) {
         const digest = await sha256('seed:' + String(entry && entry.name) + '\u0000' + String(entry && entry.url));
         id = 's' + b64urlEncode(digest).slice(0, 11);

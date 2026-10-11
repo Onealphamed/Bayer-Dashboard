@@ -241,8 +241,11 @@ describe('lib/dashboards.js', () => {
       assert.ok(COLORS.includes(a));
     });
 
-    it('drops unknown fields', () => {
-      const r = normalizeDashboard(ok({ isAdmin: true, __proto__: { polluted: 1 }, extra: 'x', hasPassword: true }));
+    it('drops unknown fields and ignores __proto__ keys from parsed JSON', () => {
+      const body = JSON.parse('{"name":"Sales","url":"https://sales.example.com","isAdmin":true,'
+        + '"__proto__":{"polluted":1},"extra":"x","hasPassword":true,"createdAt":"1999-01-01T00:00:00.000Z"}');
+      const r = normalizeDashboard(body);
+      assert.notEqual(r.createdAt, '1999-01-01T00:00:00.000Z', 'createdAt is server-controlled');
       assert.equal(r.isAdmin, undefined);
       assert.equal(r.extra, undefined);
       assert.equal(r.hasPassword, undefined);

@@ -1,15 +1,19 @@
-import { describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { GET as loginGET, POST as loginPOST, safeNext } from '../api/login.js';
 import { GET as meGET } from '../api/me.js';
 import { getConfig } from '../lib/config.js';
 import { hit, peek } from '../lib/store.js';
-import { ADMIN, VIEWER, baseEnv, call, env, req, uniqueIp } from './helpers/portal.mjs';
+import {
+  ADMIN, VIEWER, baseEnv, call, env, req, resetLoginLimits, silenceAuditLogs, uniqueIp,
+} from './helpers/portal.mjs';
 
 const login = (json, opts = {}) => call(loginPOST, req('/api/login', { method: 'POST', json, ip: opts.ip || uniqueIp(), ...opts }));
 const cookieOf = (res) => res.headers.get('set-cookie');
 
 describe('api/login.js', () => {
+  silenceAuditLogs();
+  afterEach(() => resetLoginLimits());
   describe('safeNext (open-redirect guard)', () => {
     it('keeps same-site relative paths with query and hash', () => {
       assert.equal(safeNext('/'), '/');

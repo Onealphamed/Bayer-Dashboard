@@ -101,7 +101,21 @@ export async function readJson(request) {
   }
 }
 
+/**
+ * Rejects authenticated API calls a browser made on another site's behalf,
+ * including plain top-level navigations (which carry the SameSite=Lax cookie).
+ * The hub only ever calls its API with same-origin fetch, so nothing
+ * legitimate is lost; non-browser clients send no fetch metadata and pass.
+ */
+export function assertNotCrossSite(request) {
+  const site = request.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') {
+    throw new HttpError(403, 'Cross-site request blocked.');
+  }
+}
+
 export async function requireSession(request, cfg = getConfig()) {
+  assertNotCrossSite(request);
   const session = await getSession(request, cfg);
   if (!session) throw new HttpError(401, 'Not signed in.');
   return session;

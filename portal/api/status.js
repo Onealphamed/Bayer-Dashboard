@@ -7,7 +7,7 @@
  */
 import { getConfig } from '../lib/config.js';
 import { handle, json, methodNotAllowed, requireSession } from '../lib/http.js';
-import { isPrivateHost } from '../lib/netguard.js';
+import { checkResolvedHost, isPrivateHost } from '../lib/netguard.js';
 import { loadDashboards } from '../lib/store.js';
 
 const TTL_MS = 60 * 1000;
@@ -30,6 +30,14 @@ async function probe(url, cfg) {
   } else if (!cfg.allowPrivateStatusTargets && isPrivateHost(target.hostname)) {
     result = { state: 'unknown', reason: 'private address not checked' };
   } else {
+    const resolved = cfg.allowPrivateStatusTargets ? { ok: true } : await checkResolvedHost(target.hostname);
+    if (!resolved.ok) {
+      result = resolved.reason === 'private address not checked'
+        ? { state: 'unknown', reason: resolved.reason }
+        : { state: 'down', reason: resolved.reason };
+    }
+  }
+  if (!result) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
     const started = Date.now();

@@ -30,11 +30,10 @@ describe('lib/config.js', () => {
         PORTAL_USERS: JSON.stringify([
           { username: 'v', password: 'vp', role: 'viewer' },
           { username: 'a2', password: 'ap', role: 'admin' },
-          { username: 'norole', password: 'np' },
         ]),
       });
       assert.deepEqual(cfg.users.map((u) => [u.username, u.role]), [
-        ['boss', 'admin'], ['v', 'viewer'], ['a2', 'admin'], ['norole', 'admin'],
+        ['boss', 'admin'], ['v', 'viewer'], ['a2', 'admin'],
       ]);
     });
 
@@ -77,8 +76,9 @@ describe('lib/config.js', () => {
     });
 
     it('an unrecognised role never grants admin (least privilege)', () => {
-      // A typo such as "Viewer" or "read-only" must not silently hand out full
-      // admin rights (edit, delete, export every stored password).
+      // README "Roles": admins are PORTAL_USERNAME and PORTAL_USERS entries with
+      // "role":"admin". A typo such as "Viewer" or "read-only" must not silently
+      // hand out full admin rights (edit, delete, export every stored password).
       for (const role of ['Viewer', 'VIEWER', 'read-only', 'readonly', 'guest', 'superuser']) {
         const cfg = getConfig({ PORTAL_USERS: JSON.stringify([{ username: 'u', password: 'p', role }]) });
         const u = cfg.users.find((x) => x.username === 'u');

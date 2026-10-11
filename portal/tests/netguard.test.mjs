@@ -62,8 +62,15 @@ describe('lib/netguard.js isPrivateHost', () => {
   });
 
   it('allows public IPv6', () => {
-    for (const h of ['2606:4700:4700::1111', '[2001:4860:4860::8888]', '2a00:1450::1', '2001:db8::1']) {
+    for (const h of ['2606:4700:4700::1111', '[2001:4860:4860::8888]', '2a00:1450::1', '[2a00:1450:4001:80b::200e]']) {
       assert.equal(isPrivateHost(h), false, h);
+    }
+  });
+
+  it('refuses non-routable special-purpose IPv6 (documentation, Teredo, NAT64-local, discard)', () => {
+    // 2001:db8::/32 is reserved for documentation (RFC 3849) and never routable.
+    for (const h of ['2001:db8::1', '[2001::1]', '64:ff9b:1::1', '100::1']) {
+      assert.equal(isPrivateHost(h), true, h);
     }
   });
 

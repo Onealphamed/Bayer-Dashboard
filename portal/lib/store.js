@@ -103,6 +103,12 @@ export async function loadDashboards(cfg = getConfig()) {
     ]);
     [raw, rev] = await redisPipeline(cfg, [['GET', KEY_LIST], ['GET', KEY_REV]]);
   }
+  if (rev === null || rev === undefined) {
+    // The list exists but its revision key was lost (eviction, manual DEL).
+    // Restore it so reads and the compare-and-set agree on the same number.
+    await redis(cfg, 'SET', KEY_REV, '1', 'NX');
+    rev = await redis(cfg, 'GET', KEY_REV);
+  }
   let doc;
   try {
     doc = JSON.parse(raw);
@@ -119,7 +125,7 @@ export async function loadDashboards(cfg = getConfig()) {
  * clobber each other. Plain string ops only (no cjson), for portability.
  */
 const CAS_SCRIPT = [
-  "local rev = tonumber(redis.call('GET', KEYS[2]) or '0')",
+  "local rev = tonumber(redis.call('GET', KEYS[2]) or '1')",
   "if rev ~= tonumber(ARGV[1]) then return {0, rev} end",
   "redis.call('SET', KEYS[1], ARGV[2])",
   "redis.call('SET', KEYS[2], tostring(rev + 1))",
