@@ -10,6 +10,7 @@
   'use strict';
 
   var REVEAL_MS = 30000;
+  var VIEW_KEY = 'portal:view'; // this browser's layout choice: 'cards' or 'compact'
   var STATUS_REFRESH_MS = 120000;
   var COLORS = ['indigo', 'blue', 'teal', 'green', 'amber', 'orange', 'rose', 'violet', 'slate'];
 
@@ -619,6 +620,30 @@
     }
     var total = state.items.length;
     items.forEach(function (d) { grid.appendChild(card(d, state.items.indexOf(d), total)); });
+  }
+
+  /* Layout: full cards, or one slim row per dashboard. A per-browser
+     convenience only, so storage failures (private mode) just fall back. */
+  function readView() {
+    try { return localStorage.getItem(VIEW_KEY) === 'compact' ? 'compact' : 'cards'; } catch (e) { return 'cards'; }
+  }
+
+  function setView(view, remember) {
+    $('grid').classList.toggle('compact', view === 'compact');
+    document.querySelectorAll('#view-toggle [data-view]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-view') === view ? 'true' : 'false');
+    });
+    if (remember) {
+      try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* not remembered; still applied */ }
+    }
+  }
+
+  setView(readView(), false);
+  if ($('view-toggle')) {
+    $('view-toggle').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-view]');
+      if (b) setView(b.getAttribute('data-view'), true);
+    });
   }
 
   function renderAll() {

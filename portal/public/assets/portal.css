@@ -256,6 +256,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .summary h1 { font-size: 22px; font-weight: 700; letter-spacing: -.5px; margin: 0; }
 .summary .meta { color: var(--ink-3); font-size: 13px; }
 .summary .meta b { color: var(--ink-2); font-weight: 600; }
+.view-toggle {
+  display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface);
+}
+.view-toggle button {
+  height: 28px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-3);
+}
+.view-toggle button:hover { color: var(--ink); }
+.view-toggle button[aria-pressed='true'] { background: var(--ink); color: var(--surface); }
+.view-toggle button:focus-visible { outline: none; box-shadow: var(--focus); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
 .chip {
   height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
@@ -348,6 +358,50 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
 .foot { margin-top: 36px; font-size: 12px; color: var(--ink-4); text-align: center; }
+
+/* ---------- compact view: one slim row per dashboard ------------------------
+   Same card markup; descriptions and notes are hidden, everything else stays
+   (status, links, login ID, Show / Copy password, the ⋯ menu). */
+.grid.compact { grid-template-columns: 1fr; gap: 8px; }
+.grid.compact .skeleton { height: 60px; }
+.grid.compact .card { flex-direction: row; align-items: center; min-height: 60px; padding-right: 44px; }
+.grid.compact .card::before {
+  right: auto; bottom: 0; width: 3px; height: auto;
+  border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
+}
+.grid.compact .card-top { flex: 0 1 34%; min-width: 0; align-items: center; gap: 11px; padding: 9px 12px 9px 16px; }
+.grid.compact .tile { width: 34px; height: 34px; flex-basis: 34px; border-radius: 9px; font-size: 13px; }
+.grid.compact .card-title { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; }
+.grid.compact .card-title h2 {
+  flex: 1 0 100%; margin: 0; font-size: 14.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; word-break: normal;
+}
+.grid.compact .card-host { min-width: 0; max-width: 100%; flex: 0 1 auto; }
+.grid.compact .card-sub { margin-top: 0; flex-wrap: nowrap; }
+.grid.compact .card-body { flex: 1 1 0; min-width: 0; padding: 8px 12px; }
+.grid.compact .card-desc, .grid.compact .notes { display: none; }
+.grid.compact .links { margin: 0; }
+.grid.compact .link-pill { height: 28px; }
+.grid.compact .creds {
+  flex: 0 1 34%; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center;
+  border-top: 0; border-left: 1px solid var(--line-2); border-radius: 0; background: transparent; padding: 6px 4px 6px 14px;
+}
+.grid.compact .cred-row { min-height: 28px; gap: 8px; }
+.grid.compact .cred-label { flex-basis: 58px; width: 58px; font-size: 10px; }
+.grid.compact .cred-none { padding: 0; font-size: 12px; color: var(--ink-4); }
+.grid.compact .card-menu { top: 0; bottom: 0; display: flex; align-items: center; }
+
+/* Narrower screens: the row stacks, still far shorter than a card. */
+@media (max-width: 980px) {
+  .grid.compact .card { flex-direction: column; align-items: stretch; padding-right: 0; }
+  .grid.compact .card-top { flex-basis: auto; padding: 10px 46px 0 16px; }
+  .grid.compact .card-body { padding: 8px 16px 10px; }
+  .grid.compact .creds {
+    flex-basis: auto; border-left: 0; border-top: 1px solid var(--line-2); background: var(--surface-2);
+    border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px); padding: 4px 16px 6px;
+  }
+  .grid.compact .card-menu { bottom: auto; top: 10px; }
+}
 
 /* ---------- dialogs ------------------------------------------------------- */
 .backdrop {
