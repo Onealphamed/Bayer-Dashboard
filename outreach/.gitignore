@@ -1,0 +1,4 @@
+# Contact data stays out of git (personal data).
+*.xlsx
+contacts*.json
+contacts*.csv

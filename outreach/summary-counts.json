@@ -1,0 +1,43 @@
+{
+ "summary": {
+  "Cipla": {
+   "w1": 61,
+   "w2": 156,
+   "hold": 80
+  },
+  "Dr. Reddy's": {
+   "w1": 3,
+   "w2": 9,
+   "hold": 20
+  },
+  "Sun Pharma": {
+   "w1": 29,
+   "w2": 85,
+   "hold": 13
+  },
+  "Torrent Pharma": {
+   "w1": 1,
+   "w2": 0,
+   "hold": 3
+  }
+ },
+ "tracks": {
+  "Cipla|Strategy, excellence & training": 14,
+  "Cipla|Consumer health": 4,
+  "Cipla|General / other": 161,
+  "Cipla|Cardio-diabetes": 13,
+  "Cipla|International markets": 5,
+  "Cipla|Respiratory": 16,
+  "Dr. Reddy's|General / other": 12,
+  "Sun Pharma|General / other": 96,
+  "Sun Pharma|Neuropsychiatry": 2,
+  "Sun Pharma|Cardio-diabetes": 3,
+  "Sun Pharma|International markets": 2,
+  "Sun Pharma|Oncology": 8,
+  "Sun Pharma|Consumer health": 1,
+  "Sun Pharma|Strategy, excellence & training": 2,
+  "Torrent Pharma|Cardio-diabetes": 1,
+  "Cipla|Oncology": 3,
+  "Cipla|Dermatology": 1
+ }
+}
