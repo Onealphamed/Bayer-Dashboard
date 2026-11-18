@@ -48,6 +48,7 @@ function refresh() {
   renderCharts();
   renderYearVsYear();
   renderInsights();
+  renderRequestTrends();
   renderTable();
   renderKOLs();
 }

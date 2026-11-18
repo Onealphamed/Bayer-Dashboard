@@ -168,6 +168,60 @@
       </div>
     </div>
 
+    <!-- INVITATION REQUEST TRENDS -->
+    <div class="section-title">Invitation Request Trends</div>
+    <div class="req-controls">
+      <div class="req-ctrl">
+        <label>Month</label>
+        <select id="reqMonthA" onchange="setTrendMonth('A', this.value)"></select>
+      </div>
+      <div class="req-vs">vs</div>
+      <div class="req-ctrl">
+        <label>Compare to</label>
+        <select id="reqMonthB" onchange="setTrendMonth('B', this.value)"></select>
+      </div>
+      <div class="req-therapy filter-row" id="reqTherapy">
+        <button class="filter-chip active" onclick="setTrendTherapy('all',this)">All</button>
+        <button class="filter-chip onco" onclick="setTrendTherapy('Onco',this)">Oncology</button>
+        <button class="filter-chip opthal" onclick="setTrendTherapy('Opthal',this)">Ophthal</button>
+      </div>
+    </div>
+    <div class="req-kpis" id="reqKpis"></div>
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Cumulative Requests · “Run Rate” by Day of Month</div>
+            <div class="chart-sub" id="reqCumulSub">How this month's pace compares, day by day</div>
+          </div>
+          <span class="chart-badge">Worm</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartReqCumul" height="190"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row chart-row-2">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Week-on-Week</div>
+            <div class="chart-sub">Requests per week of month</div>
+          </div>
+          <span class="chart-badge">Bars</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartReqWeekly" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Day-on-Day</div>
+            <div class="chart-sub">Requests per calendar day</div>
+          </div>
+          <span class="chart-badge">Line</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartReqDaily" height="200"></canvas></div>
+      </div>
+    </div>
+
     <!-- YEAR VS YEAR -->
     <div class="section-title">Year vs Year</div>
     <div class="chart-row" style="grid-template-columns:1fr">
@@ -337,6 +391,7 @@
 <script src="js/auth.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/tab1-dashboard.js"></script>
+<script src="js/trends.js"></script>
 <script src="js/tab2-intelligence.js"></script>
 <script src="js/gallery-data.js"></script>
 <script src="js/tab3-gallery.js"></script>
