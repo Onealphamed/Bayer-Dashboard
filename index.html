@@ -191,6 +191,21 @@
       <div class="chart-card">
         <div class="chart-header">
           <div>
+            <div class="chart-title">Month-on-Month · <span id="reqYearLbl"></span></div>
+            <div class="chart-sub">Requests per month across the year</div>
+          </div>
+          <div class="req-ctrl" style="flex-direction:row;align-items:center;gap:6px">
+            <label style="margin:0">Year</label>
+            <select id="reqYear" onchange="setTrendYear(this.value)"></select>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartReqYear" height="180"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
             <div class="chart-title">Cumulative Requests · “Run Rate” by Day of Month</div>
             <div class="chart-sub" id="reqCumulSub">How this month's pace compares, day by day</div>
           </div>

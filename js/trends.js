@@ -8,6 +8,7 @@ let trendMonthA   = null;   // 'yyyy-MM'
 let trendMonthB   = null;   // 'yyyy-MM'
 let trendTherapy  = 'all';  // 'all' | 'Onco' | 'Opthal'
 let trendUserPicked = false; // once the user chooses, stop auto-tracking latest
+let trendYear     = null;   // year for the month-on-month chart
 
 function trendDate(raw) {
   if (!raw) return null;
@@ -46,6 +47,17 @@ function weeklyFromDaily(daily) {
   for (let i = 0; i < daily.length; i++) if (daily[i] != null) w[Math.min(4, Math.floor(i / 7))] += daily[i];
   return w;
 }
+
+function availableTrendYears() {
+  const s = new Set(trendRows().map(r => r.dt.getFullYear()));
+  return [...s].sort((a, b) => a - b);
+}
+function monthlyTotals(year) {
+  const m = new Array(12).fill(0);
+  trendRows().forEach(r => { if (r.dt.getFullYear() === year) m[r.dt.getMonth()]++; });
+  return m;
+}
+function setTrendYear(val) { trendYear = parseInt(val); renderRequestTrends(); }
 
 function setTrendMonth(which, val) { trendUserPicked = true; if (which === 'A') trendMonthA = val; else trendMonthB = val; renderRequestTrends(); }
 function setTrendTherapy(t, btn) {
@@ -159,4 +171,28 @@ function renderRequestTrends() {
       scales: { x: { grid: { color: gridC() }, ticks: { maxTicksLimit: 16, font: { size: 10 } } },
                 y: { grid: { color: gridC() }, beginAtZero: true, ticks: { precision: 0 } } } }
   });
+
+  // ── Month-on-month across a full year (Jan–Dec), prev year as reference line
+  const years = availableTrendYears();
+  if (years.length) {
+    if (!trendYear || !years.includes(trendYear)) trendYear = years[years.length - 1];
+    const selY = document.getElementById('reqYear');
+    if (selY) selY.innerHTML = years.slice().reverse().map(y => `<option value="${y}"${y === trendYear ? ' selected' : ''}>${y}</option>`).join('');
+    const lblY = document.getElementById('reqYearLbl');
+    if (lblY) lblY.textContent = trendYear;
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const curY  = monthlyTotals(trendYear);
+    const prevY = years.includes(trendYear - 1) ? monthlyTotals(trendYear - 1) : null;
+    destroyChart('chartReqYear');
+    charts.chartReqYear = new Chart(document.getElementById('chartReqYear'), {
+      type: 'bar',
+      data: { labels: MON, datasets: [
+        { label: String(trendYear), data: curY, backgroundColor: blue, borderRadius: 4, order: 2 },
+        ...(prevY ? [{ type: 'line', label: String(trendYear - 1), data: prevY, borderColor: slate, borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 4, tension: .3, fill: false, order: 1 }] : []),
+      ]},
+      options: { responsive: true, animation: { duration: 500 }, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } }, tooltip: { ...tt } },
+        scales: { x: { grid: { display: false } }, y: { grid: { color: gridC() }, beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+  }
 }
